@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "maconfai-update": {
+      "description": "On session start, if ai-lock.json is present, run `npx maconfai update` to refresh maconfai-managed skills, MCPs, and hooks.",
+      "claude-code": {
+        "SessionStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": ".agents/hooks/maconfai-update/check.sh"
+              }
+            ]
+          }
+        ]
+      },
+      "cursor": {
+        "beforeSubmitPrompt": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": ".agents/hooks/maconfai-update/check.sh"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
