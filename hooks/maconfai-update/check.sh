@@ -2,7 +2,7 @@
 # maconfai-update hook
 #
 # Triggered at the start of an agent session (Claude Code: SessionStart,
-# Cursor: beforeSubmitPrompt). When an `ai-lock.json` is present at the
+# Cursor: sessionStart). When an `ai-lock.json` is present at the
 # project root, run `npx maconfai update` so maconfai-managed skills,
 # MCP servers, and hooks stay in sync with their upstream sources.
 #

@@ -15,7 +15,7 @@
         ]
       },
       "cursor": {
-        "beforeSubmitPrompt": [
+        "sessionStart": [
           {
             "hooks": [
               {

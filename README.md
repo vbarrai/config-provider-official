@@ -18,6 +18,6 @@ npx maconfai install vbarrai/config-provider-official
 
 | Hook | Event | Description |
 |------|-------|-------------|
-| `maconfai-update` | Claude Code: `SessionStart` · Cursor: `beforeSubmitPrompt` | When `ai-lock.json` is present at the project root, runs `npx maconfai update` to keep maconfai-managed skills, MCP servers, and hooks in sync with their upstream sources. Non-blocking: any failure (offline, missing `npx`, etc.) is swallowed so the session is never interrupted. |
+| `maconfai-update` | Claude Code: `SessionStart` · Cursor: `sessionStart` | When `ai-lock.json` is present at the project root, runs `npx maconfai update` to keep maconfai-managed skills, MCP servers, and hooks in sync with their upstream sources. Non-blocking: any failure (offline, missing `npx`, etc.) is swallowed so the session is never interrupted. |
 
 Hooks are only supported on Claude Code and Cursor (Codex and Open Code have no hook system in maconfai).
