@@ -1,0 +1,11 @@
+# Local maconfai install state (created by consumers, not shipped)
+.agents/
+.claude/
+.cursor/
+.codex/
+.opencode/
+.mcp.json
+ai-lock.json
+
+# Skill development workspaces (eval runs, scratch outputs)
+skills/*-workspace/

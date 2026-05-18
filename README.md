@@ -8,6 +8,13 @@ A centralized repository of MCP (Model Context Protocol) server configurations a
 npx maconfai install vbarrai/config-provider-official
 ```
 
+## Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| `maconfai-author` | Author and publish skills, MCP servers, and hooks in a maconfai-compatible distribution repo. Covers file layout, naming rules, hook event mappings (Claude Code ↔ Cursor), MCP env-syntax translation, and registry-style remote skill references. |
+| [`skill-creator`](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator) | Create new skills, modify and improve existing skills, and measure skill performance. Remote reference — fetched from `anthropics/claude-plugins-official`. |
+
 ## Available MCP Servers
 
 | Service | Type | Description |
