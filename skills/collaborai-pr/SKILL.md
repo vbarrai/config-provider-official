@@ -60,7 +60,7 @@ If your environment specifies a commit trailer (many setups require a `Co-Author
 
 ## 5. Confirm, then push and open the PR
 
-Pushing and opening a PR are outward-facing and awkward to walk back, so **show the user the plan and get a yes before you push**: the branch name, the commit subject, and the PR title + a 1-2 sentence body summary. This is the one place to pause — everything before it is local and reversible.
+Pushing, opening a PR, creating a Linear ticket, and pinging a reviewer on Slack are all outward-facing and awkward to walk back, so **show the user the plan and get a yes before you push**: the branch name, the commit subject, the PR title + a 1-2 sentence body summary, and — if the configs are found (see stages 6 and 7) — the Linear team/status/labels the ticket will get and the Slack channel and reviewer you'll notify. This is the one place to pause — everything before it is local and reversible.
 
 On confirmation:
 
@@ -82,9 +82,54 @@ Pass the body via `--body` (use a heredoc or `--body-file` for multi-line). If t
 
 3. Report the PR URL that `gh` returns so the user can click straight through.
 
+## 6. Create a Linear ticket
+
+So the work is tracked, create a Linear issue for the change once the PR is open.
+
+First, **read the Linear config from the project's `AGENTS.md`** (at the repo root). Pull out the defaults to apply:
+
+- **team** — the Linear team the issue belongs to.
+- **status** — the workflow state to set on creation (e.g. `In Review`).
+- **labels / tags** — the default labels to attach.
+
+If there's no `AGENTS.md`, or it has no Linear section / is missing the team (the one value with no sensible default), **don't guess** — skip this stage and tell the user the PR is open but you couldn't create the Linear ticket because the config wasn't found (name what was missing), so they can add it to `AGENTS.md` for next time. If only `status` or `labels` are missing, create the issue without them rather than skipping entirely.
+
+When the config is present, create the issue with the Linear MCP tools:
+
+1. Resolve the team, workflow state, and label IDs from their names if the create tool needs IDs rather than names.
+2. Create the issue with: a title matching the PR title, a description that summarises the change and links the PR URL, and the configured team / status / labels applied.
+3. Report the Linear issue URL/identifier (e.g. `ENG-123`) back to the user, and keep it — the Slack message in stage 7 should link it alongside the PR.
+
+This is outward-facing, so it ships only under the same confirmation you got in stage 5 — don't create the ticket if the user declined the push/PR.
+
+## 7. Request a review on Slack
+
+A PR isn't really "up for review" until the reviewer knows about it. After the PR is open (and the Linear ticket created, if any), post a message to Slack asking for the review.
+
+First, **read the Slack config from the project's `AGENTS.md`** (at the repo root). Pull out these three values:
+
+- **Slack organisation** — the workspace/team the message goes to.
+- **channel** — the channel to post in (e.g. `#code-review`).
+- **user qui doit review** — the handle of the reviewer to mention.
+
+If there's no `AGENTS.md`, or it has no Slack section / is missing any of the three values, **don't guess** — skip this stage and tell the user the PR is open but you couldn't notify Slack because the config wasn't found (name what was missing), so they can add it to `AGENTS.md` for next time.
+
+When the config is present, send the message with the Slack MCP tools:
+
+1. Resolve the channel and reviewer if needed (`mcp__slack__channels_list`, `mcp__slack__users_search`) so the mention actually pings them rather than posting literal text.
+2. Post with `mcp__slack__conversations_add_message` to the configured channel in the configured organisation. Keep it short and useful — mention the reviewer, say what the PR does in one line, and include the PR URL (and the Linear ticket from stage 6 if one was created). For example:
+
+   > @<reviewer> review please 🙏 — <PR title>: <one-line summary>
+   > PR: <PR URL> · Linear: <ticket URL>
+
+3. Confirm to the user that the review request was sent (which channel, which reviewer), or report the Slack error if posting failed.
+
+This message is outward-facing, so it ships only under the same confirmation you got in stage 5 — don't post to Slack if the user declined the push/PR.
+
 ## Guardrails
 
 - **Never** force-push, rewrite shared history, or push directly to `main`/`master`.
 - If `git push` fails on auth, surface the error and suggest the user check `gh auth status` rather than retrying blindly.
 - Don't commit obvious secrets (`.env` files, key material) even if they're in the working tree — flag them to the user instead.
+- Don't fabricate Slack or Linear details: if the values aren't in `AGENTS.md`, skip that stage and say so rather than posting to a guessed channel, @-ing the wrong person, or filing a ticket on the wrong team.
 - If checks can't be made green within the cap, default to opening a **draft** PR (`gh pr create --draft`) only if the user explicitly accepts shipping red; otherwise stop at stage 2.
