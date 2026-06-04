@@ -20,6 +20,7 @@ npx maconfai install vbarrai/config-provider-official
 | Service | Type | Description |
 |---------|------|-------------|
 | Linear  | SSE  | Project management and issue tracking |
+| chrome-devtools | stdio | Browser automation, debugging, and performance/accessibility auditing via Chrome DevTools (`npx chrome-devtools-mcp@latest`) |
 
 ## Available Hooks
 
