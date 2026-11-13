@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "super-agent-reminder": {
+      "description": "On every user prompt, remind the agent to invoke the `super-agent` skill when the message asks it to do something. Silent for worker briefs (prompts starting with WORKER or SWARM).",
+      "claude-code": {
+        "UserPromptSubmit": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": ".agents/hooks/super-agent-reminder/super-agent-reminder.py",
+                "timeout": 5
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
