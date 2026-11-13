@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "super-agent-reminder": {
+      "description": "On session start, remind the agent to invoke the `super-agent` skill whenever a message asks it to do something during the session.",
+      "claude-code": {
+        "SessionStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": ".agents/hooks/super-agent-reminder/super-agent-reminder.py",
+                "timeout": 5
+              }
+            ]
+          }
+        ]
+      },
+      "cursor": {
+        "sessionStart": [
+          {
+            "hooks": [
+              {
+                "type": "command",
+                "command": ".agents/hooks/super-agent-reminder/super-agent-reminder.py"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
