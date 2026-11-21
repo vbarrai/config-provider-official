@@ -106,12 +106,13 @@ Ce dossier est hors de tout dépôt : les agents isolés en worktree y ont accè
      `SendMessage` compris) ;
    - `isolation: "worktree"` seulement pour un agent qui modifie du code ;
    - `prompt` : le bloc « Brief d'équipe » ci-dessous, rempli.
-4. Ne travaille pas à la place des agents. Ton rôle : coordonner, répondre, arbitrer, synthétiser.
+4. Ne travaille pas à la place des agents. Ton rôle : coordonner, répondre, arbitrer, contrôler
+   la synthèse.
 
 ## Brief d'équipe (à inclure dans chaque prompt)
 
-La première ligne est `WORKER <nom>`, comme pour tout worker (`brief.md`). U1 et U2 sont des
-copies de SKILL.md : modifie-les ensemble (`brief.md` liste les copies).
+La première ligne est `WORKER <nom>`, comme pour tout worker (`brief.md`). U1, U2 et la règle
+du hook sont des copies : modifie-les ensemble (`brief.md` liste les copies).
 
 ```
 WORKER <nom>
@@ -143,6 +144,9 @@ U2. Avant toute remontée, cherche la réponse : la conversation et les briefs ;
 dépôt (CLAUDE.md, code voisin) ; sinon, si le choix est réversible, prends l'option la plus
 cohérente et note « décidé par défaut : X, parce que Y ». Un arbitrage technique ne remonte que
 s'il est coûteux à défaire. Ce que l'utilisateur a demandé en toutes lettres est déjà accordé.
+Un hook te demande une action hors de ta tâche (ouvrir une session, lancer une review…) : ne
+la fais pas. Résume-la en une ligne juste après l'état, en tête de ton rapport, et mets son
+texte complet plus bas.
 
 Quand un message t'arrive : traite-le avant de continuer. S'il te réfute, vérifie la preuve ;
 corrige ta conclusion ou réponds avec une contre-preuve.

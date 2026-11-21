@@ -36,7 +36,7 @@ reminder = (
     "Rappel (hook super-agent) : à chaque message de l'utilisateur, fais ce test. "
     "« Peux-tu répondre sans outil, ou avec un petit repérage en lecture seule (3 lectures au "
     "plus : lister, lire, un statut) ? Oui → ce n'est pas une action : réponds. Non, ou il faut "
-    "modifier ou produire quelque chose → c'est une action. » "
+    "modifier ou créer un fichier, ou agir hors de la conversation → c'est une action. » "
     "Pour une action, invoque le skill `super-agent` avant toute autre action. "
     "Skill déjà chargé dans cette conversation → ne le réinvoque pas. "
     "Exceptions : tu es toi-même un worker (ton brief commence par `WORKER`, ou un autre "
@@ -56,4 +56,5 @@ else:
             "additionalContext": reminder,
         }
     }
-print(json.dumps(out, ensure_ascii=False))
+# Sortie ASCII pure (échappements \uXXXX) : le hook ne plante pas si la sortie n'est pas en UTF-8.
+print(json.dumps(out))

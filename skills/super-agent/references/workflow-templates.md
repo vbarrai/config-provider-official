@@ -212,5 +212,5 @@ return { changes: done, integration: integ, review, missing: args.plan.tasks.len
 ```
 
 Tâche bloquée ou tests rouges : ne relance pas en boucle. Rapporte, et propose soit une vague de
-correction (dans le total du plan ; au-dessus du seuil d'accord de « Seuils », redemande), soit
+correction (dans le total du plan ; 11 agents ou plus au total → accord, voir « Seuils »), soit
 une reprise par un seul worker (sous-agent) qui enchaîne les tâches.

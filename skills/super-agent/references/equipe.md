@@ -51,7 +51,10 @@ Reformule en 6 lignes maximum :
 
 Fais un **repérage inline** si le découpage en dépend (lister les fichiers, les sous-systèmes,
 lire le diff, chercher les sources principales). On n'a pas besoin de tout savoir avant de
-commencer, mais il faut connaître la liste des éléments à répartir avant d'orchestrer.
+commencer, mais il faut connaître la liste des éléments à répartir avant d'orchestrer. Ce
+repérage n'a pas le plafond des 3 lectures du test question / action (ce plafond vaut pour
+répondre à une question), mais il reste de la lecture : une recherche de fond part chez un
+sous-agent.
 
 S'il manque une information qui change le découpage, pose **une** question précise. Sinon, avance.
 
@@ -150,13 +153,13 @@ Hors périmètre : <ce qui ne sera pas couvert>
 
 Lancer ou attendre : applique « Seuils » (SKILL.md), sans le réécrire.
 
-- **L'utilisateur a demandé l'équipe dans ce message, et le Total du plan reste sous le seuil
-  d'accord** : montre le plan et lance dans le même tour. Sa demande vaut feu vert ; il peut
+- **L'utilisateur a demandé l'équipe dans ce message, et le Total du plan est de 10 agents au
+  plus** : montre le plan et lance dans le même tour. Sa demande vaut feu vert ; il peut
   dire stop.
 - **Tu proposes l'équipe toi-même** : attends son feu vert (« Je lance ? »).
-- **Total au-dessus du seuil d'accord** : demande l'autorisation avec `AskUserQuestion`, en
-  nommant **le nombre exact d'agents**, ce que les agents en plus apportent, et une **variante
-  allégée** sous le seuil. Ne lance pas plus d'agents que le nombre approuvé. S'il en faut
+- **Total de 11 agents ou plus** : demande l'autorisation avec `AskUserQuestion`, en nommant
+  **le nombre exact d'agents**, ce que les agents en plus apportent, et une **variante
+  allégée** à 10 agents au plus. Ne lance pas plus d'agents que le nombre approuvé. S'il en faut
   davantage en route, arrête-toi et redemande.
 
 Si l'utilisateur modifie le plan, recalcule le total et réapplique la règle.

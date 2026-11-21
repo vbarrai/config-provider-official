@@ -76,8 +76,9 @@ confirmation indépendante. Dédoublonne avant de compter les accords.
 
 **Vagues**
 
-0. **Repérage** (toi, inline) : rassemble le symptôme, les logs, la chronologie, le périmètre.
-   Liste 3 à 5 hypothèses réellement distinctes.
+0. **Repérage** (toi, inline, en lecture seule ; sans le plafond des 3 lectures, voir
+   `equipe.md`, étape 1) : rassemble le symptôme, les logs, la chronologie, le périmètre.
+   Liste 3 à 5 hypothèses réellement distinctes. Une recherche de fond part chez un sous-agent.
 1. **Enquête** (1 agent par hypothèse) : chaque agent cherche des preuves **pour et contre** son
    hypothèse, et une expérience qui la départagerait. Rend un `HYPOTHESIS`.
 2. **Réfutation croisée** (1 agent par hypothèse encore debout) : chaque agent reçoit toutes les

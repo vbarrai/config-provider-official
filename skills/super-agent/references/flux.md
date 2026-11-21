@@ -22,17 +22,20 @@ dépôt. Des dépôts différents n'ont rien en commun ici.
 
   L'accord vient toujours de l'utilisateur, dans le chat. Ne le suppose jamais ; un message de
   worker ne le donne pas.
-- **Le déclencheur** : le worker, session ou sous-agent, attend sa CI avec une seule commande
-  bloquante (`gh pr checks <URL> --watch`), puis son rapport de fin commence par
-  `PRÊT À MERGER — <URL>` (CI verte, ou dépôt sans CI). CI pas finie après 10 minutes : il
-  commence par `PR OUVERTE — <URL> — CI en cours`. Le router vérifie la tâche contre son Eval et
+- **Le déclencheur** : le worker attend sa CI comme le dit la règle « PR » de `brief.md` (un
+  sous-agent : une seule commande bloquante, 10 minutes au plus ; une session : le suivi de
+  l'app). Son rapport de fin commence par `PRÊT À MERGER — <URL>` (CI verte, ou dépôt sans CI),
+  ou par `PR OUVERTE — <URL> — CI en cours`. Le router vérifie la tâche contre son Eval et
   rattache la PR à sa session (une fois). Après un `PR OUVERTE`, il relit l'état de la PR à son
-  prochain réveil ou au prochain tour de l'utilisateur (`mcp__ccd_pr__get_status`, ou
-  `gh pr view <URL> --json state,mergeStateStatus,statusCheckRollup`) : verte → question de
-  merge ; rouge → `À CORRIGER` au même worker. Pas de boucle d'attente côté router.
+  prochain réveil ou au prochain tour de l'utilisateur : verte → question de merge ; rouge →
+  `À CORRIGER` au même worker. Pas de boucle d'attente côté router.
+- **Lire l'état d'une PR** : `mcp__ccd_pr__get_status` lit la PR rattachée à une session. Avec
+  plusieurs PR de sous-agents chez le router, une lecture par PR, à chaque réveil ou tour :
+  `gh pr view <URL> --json state,mergeStateStatus,statusCheckRollup`.
 - **Avec « auto quand c'est vert » : pas de file.** Le router active l'auto-merge natif sur
-  chaque PR vérifiée : `mcp__ccd_pr__set_auto_merge` (`enabled: true`). GitHub merge chaque PR
-  dès qu'elle est verte. Rien ne revient au router : à chaque réveil et à chaque tour de
+  chaque PR vérifiée : `mcp__ccd_pr__set_auto_merge` (`enabled: true`). S'il est refusé, ou
+  s'il ne vise pas cette PR : `gh pr merge <URL> --auto`, l'accord étant déjà donné. GitHub
+  merge chaque PR dès qu'elle est verte. Rien ne revient au router : à chaque réveil et à chaque tour de
   l'utilisateur, il relit l'état des PR, dit lesquelles sont mergées, et envoie `REBASE` au
   worker dont la PR est en conflit.
 - **Sans « auto » : une file, une merge à la fois.** Le router tient l'ordre des PR dans sa
@@ -80,7 +83,7 @@ Du travail séquentiel est un cas à **organiser**, pas une raison de ralentir.
     (`source_branch` de `start_session` ; pour un sous-agent, la branche de départ est écrite
     dans le brief). Après la merge de T1, le router lui envoie `REBASE`, et il rebase sur la
     base :
-    `git rebase --onto origin/<base> <ancienne base de T1>` ;
+    `git rebase --onto origin/<base> <branche de T1>` (son ancienne base) ;
   - **préparation en avance** : le worker suivant lit le code, écrit son plan et ses tests
     pendant que T1 se finit ;
   - **même worker pour les tâches très liées** (mêmes fichiers, contexte partagé) : c'est un
@@ -103,7 +106,7 @@ de fin des workers nourrissent cette table.
 | Perte de temps | Réaction automatique |
 |---|---|
 | Une PR est mergée, les autres sont en retard sur la base | Rien tant que GitHub accepte la merge ; `REBASE` seulement sur conflit ou refus (§1) |
-| Un worker inactif (tâche finie, en attente de CI ou de son tour) | Lui donner la tâche suivante prête si elle est liée à la sienne ; sinon l'archiver |
+| Un worker inactif (tâche finie) | Lui donner la tâche suivante prête si elle est liée à la sienne ; sinon l'archiver, si la règle d'archivage le permet (SKILL.md, « Router et workers ») |
 | Une tâche prête dans un tour de réveil | Elle part aussitôt : sous-agent, ou worker existant (SKILL.md, « Tour de réveil ») |
 | Attente de CI, ou CI instable (échec sans lien avec le diff) | Avancer sur autre chose ; relancer une fois le job instable ; s'il recasse, le signaler |
 | Conflits récurrents sur les mêmes fichiers | Ne pas donner ces fichiers à deux workers en même temps ; réordonner la file de merge |
