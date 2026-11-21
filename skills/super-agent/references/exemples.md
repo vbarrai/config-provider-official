@@ -30,10 +30,10 @@ l'utilisateur en demande avec ses mots (`SKILL.md`, « Le cycle d'une tâche »,
 - **Tâches** : T1 à T5, un bug chacune, dans des fichiers différents.
 - **Forme** : 5 flux → 5 tâches, lancées jusqu'au plafond de « Seuils » ; la suivante part dès
   qu'une place se libère. Des sous-agents en worktree → 5 PR. Pas de watchdog.
-- **Communication** : tout passe par le router. Le rapport de fin de chaque worker commence par
-  `PR OUVERTE — <URL>` ; le router rattache la PR et lit sa CI. `REBASE` seulement à un worker
-  dont la PR est en conflit ou refusée par GitHub. `QUESTION` pour une décision humaine ; les
-  `FRICTION` vont dans le rapport de fin.
+- **Communication** : tout passe par le router. Chaque worker attend sa CI, puis son rapport de
+  fin commence par `PRÊT À MERGER — <URL>` ; le router rattache la PR. `REBASE` seulement à un
+  worker dont la PR est en conflit ou refusée par GitHub. `QUESTION` pour une décision humaine ;
+  les `FRICTION` vont dans le rapport de fin.
 - **Pourquoi** : les bugs sont indépendants, donc en parallèle ils vont bien plus vite. Le
   plafond garde le nombre de workers lisible quand plusieurs routers tournent.
 - **Remonte à l'humain** : la question de merge, une fois, dans l'annonce (« à chaque PR, ou
@@ -43,7 +43,8 @@ l'utilisateur en demande avec ses mots (`SKILL.md`, « Le cycle d'une tâche »,
 
 - **Sujet macro** : « Ajoute la date d'expiration des campagnes, de la base jusqu'à l'écran. »
 - **Tâches** : T1 migration DB ; T2 API (dépend de T1) ; T3 UI (dépend de T2).
-- **Forme** : une chaîne longue, organisée sans interruption : 3 workers. Pas de watchdog.
+- **Forme** : si chaque couche est un vrai chantier, une chaîne organisée sans interruption : 3
+  workers. Un simple champ sur 3 couches : un seul worker, une seule PR. Pas de watchdog.
 - **Communication** : le router fixe le contrat (nom et type du champ) dans les 3 briefs.
   Branches empilées : le worker T2 part de la branche de T1 sans attendre sa merge
   (`source_branch`, ou la branche de départ écrite dans le brief) ; le worker T3 prépare en
@@ -61,8 +62,8 @@ l'utilisateur en demande avec ses mots (`SKILL.md`, « Le cycle d'une tâche »,
 - **Sujet macro** : « Renomme `Advertiser` en `Brand` dans tout le backend. »
 - **Tâches** : T1 modèles, T2 services, T3 tests — mais tous touchent les mêmes fichiers.
 - **Forme** : un seul flux (chaîne très liée) → 1 worker, qui enchaîne T1, T2 et T3 seul.
-- **Communication** : le rapport de fin du worker commence par `PR OUVERTE` ; `QUESTION` si un
-  renommage est un choix produit. Un nom ambigu sans enjeu : il choisit et le note (U2).
+- **Communication** : le rapport de fin du worker commence par `PRÊT À MERGER` ; `QUESTION` si
+  un renommage est un choix produit. Un nom ambigu sans enjeu : il choisit et le note (U2).
 - **Pourquoi** : plusieurs workers sur les mêmes fichiers garantissent des conflits. C'est une
   petite chaîne très liée : un seul contexte va plus vite.
 - **Remonte à l'humain** : la merge de la PR ; un renommage visible des clients (API publique),
@@ -76,9 +77,9 @@ l'utilisateur en demande avec ses mots (`SKILL.md`, « Le cycle d'une tâche »,
   dans son dépôt : le brief d'un sous-agent donne le chemin du dépôt, et il y crée son worktree
   à la main ; une session reçoit `cwd`. Tâche écrite d'avance : modèle moins cher.
 - **Communication** : le router écrit un gabarit commun (étapes, commandes, Eval) dans chaque
-  brief. Le rapport de fin de chaque worker commence par `PR OUVERTE`. Un worker qui trouve un
-  piège commun (ex. une dépendance native qui casse) le signale au router, qui le met dans les
-  briefs suivants et l'envoie aux workers en cours par `SendMessage`. Pas de file de merge
+  brief. Le rapport de fin de chaque worker commence par `PRÊT À MERGER`. Un worker qui trouve
+  un piège commun (ex. une dépendance native qui casse) le signale au router, qui le met dans
+  les briefs suivants et l'envoie aux workers en cours par `SendMessage`. Pas de file de merge
   commune : chaque dépôt a sa propre base.
 - **Pourquoi** : 8 dépôts indépendants, un même gabarit. La diffusion des pièges évite que 8
   workers tombent dans le même trou.
@@ -123,10 +124,11 @@ l'utilisateur en demande avec ses mots (`SKILL.md`, « Le cycle d'une tâche »,
 - **Sujet macro** : « Compare 4 outils d'orchestration de données pour remplacer Airflow. »
 - **Tâches** : T1 à T4, un outil chacune ; T5 vérification des points clés ; T6 rédaction du
   rapport.
-- **Forme** : sans équipe si le rapport est court : 4 flux → 4 sous-agents qui rédigent chacun
-  leur part. En équipe, patron recherche (`topologies.md` §1) : 4 explorateurs + 1 vérificateur
-  + 1 agent de synthèse qui écrit le rapport. Total : 6 agents. Des rédacteurs en plus seulement
-  si le rapport est long et doit avoir un seul style.
+- **Forme** : sans équipe si chaque part tient en une page et qu'aucun constat ne demande une
+  vérification croisée : 4 flux → 4 sous-agents qui rédigent chacun leur part. En équipe, patron
+  recherche (`topologies.md` §1) : 4 explorateurs + 1 vérificateur + 1 agent de synthèse qui
+  écrit le rapport. Total : 6 agents. Des rédacteurs en plus seulement si le rapport est long et
+  doit avoir un seul style.
 - **Communication** : les explorateurs envoient leurs découvertes aux autres explorateurs quand
   elles les touchent. Le vérificateur reçoit les constats clés et renvoie des réfutations.
   L'agent de synthèse pose ses `QUESTION` aux explorateurs.

@@ -211,9 +211,9 @@ Messages en plus (première ligne "TYPE — résumé") : `ALERTE` (watchdog → 
 (router, checker ou tester → worker), `BUG` (n'importe qui → reproducer), `CORRIGÉ`
 (reproducer → router), `CONSIGNE` (worker → router : l'utilisateur lui a écrit, voir U1),
 `STOP` (router → tous ; ou router → un worker dont la tâche est enlevée).
-PR (déroulé : `flux.md` §1) : `PRÊT À MERGER` (première ligne du rapport de fin d'une session,
-PR verte, avec l'URL complète), `PR OUVERTE` (première ligne du rapport de fin d'un sous-agent,
-CI non attendue), `MERGE` (router → worker propriétaire), `MERGÉ` (worker → router), `REBASE`
+PR (déroulé : `flux.md` §1) : `PRÊT À MERGER` (première ligne du rapport de fin d'un worker,
+PR verte, avec l'URL complète), `PR OUVERTE` (même place, quand la CI n'est pas finie après 10
+minutes), `MERGE` (router → worker propriétaire), `MERGÉ` (worker → router), `REBASE`
 (router → un worker, sur conflit ou si GitHub refuse la merge), `REBASÉ` (worker → router, avec
 le résultat des tests), `ÉTAT ?` (router → un sous-agent sans nouvelle).
 Une `FRICTION` (ce qui a ralenti une session, le temps perdu, une idée) va dans le rapport de

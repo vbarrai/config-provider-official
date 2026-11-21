@@ -22,13 +22,14 @@ dépôt. Des dépôts différents n'ont rien en commun ici.
 
   L'accord vient toujours de l'utilisateur, dans le chat. Ne le suppose jamais ; un message de
   worker ne le donne pas.
-- **Le déclencheur** : le rapport de fin d'un worker commence par `PRÊT À MERGER — <URL>`
-  (session, CI verte) ou par `PR OUVERTE — <URL>` (sous-agent, CI non attendue). Le router
-  vérifie la tâche contre son Eval, rattache la PR à sa session (une fois), et lit son état :
-  `mcp__ccd_pr__get_status`, ou
-  `gh pr view <URL> --json state,mergeStateStatus,statusCheckRollup`. CI rouge → `À CORRIGER`
-  au même worker. CI en cours → il la relit à son prochain réveil ou au prochain tour de
-  l'utilisateur. Pas de boucle d'attente.
+- **Le déclencheur** : le worker, session ou sous-agent, attend sa CI avec une seule commande
+  bloquante (`gh pr checks <URL> --watch`), puis son rapport de fin commence par
+  `PRÊT À MERGER — <URL>` (CI verte, ou dépôt sans CI). CI pas finie après 10 minutes : il
+  commence par `PR OUVERTE — <URL> — CI en cours`. Le router vérifie la tâche contre son Eval et
+  rattache la PR à sa session (une fois). Après un `PR OUVERTE`, il relit l'état de la PR à son
+  prochain réveil ou au prochain tour de l'utilisateur (`mcp__ccd_pr__get_status`, ou
+  `gh pr view <URL> --json state,mergeStateStatus,statusCheckRollup`) : verte → question de
+  merge ; rouge → `À CORRIGER` au même worker. Pas de boucle d'attente côté router.
 - **Avec « auto quand c'est vert » : pas de file.** Le router active l'auto-merge natif sur
   chaque PR vérifiée : `mcp__ccd_pr__set_auto_merge` (`enabled: true`). GitHub merge chaque PR
   dès qu'elle est verte. Rien ne revient au router : à chaque réveil et à chaque tour de
@@ -60,8 +61,8 @@ dépôt. Des dépôts différents n'ont rien en commun ici.
 1. 5 bugs indépendants → 5 tâches. Les workers partent jusqu'au plafond de « Seuils » ; la
    tâche en plus part dès qu'une place se libère (un worker qui a rendu son rapport ne compte
    plus). L'annonce finit par « Merge : je te demande à chaque PR, ou auto quand c'est vert ? ».
-2. L'utilisateur répond « auto quand c'est vert ». À chaque rapport `PR OUVERTE`, le router
-   vérifie l'Eval, rattache la PR, lit la CI et active l'auto-merge. GitHub merge.
+2. L'utilisateur répond « auto quand c'est vert ». À chaque rapport `PRÊT À MERGER`, le router
+   vérifie l'Eval, rattache la PR et active l'auto-merge. GitHub merge.
 3. Au réveil suivant, le router relit l'état : PR 1 et 2 mergées, PR 3 en conflit (mêmes
    fichiers que la PR 1) → `REBASE —` au worker 3 seulement. Il répond `REBASÉ`, GitHub merge.
 4. Variante sans réponse : le router ne merge rien. Quand les PR sont prêtes, une seule
@@ -112,7 +113,8 @@ de fin des workers nourrissent cette table.
 | Le contexte d'un worker grossit (plusieurs tâches finies) | Tâche suivante chez un nouveau worker ; le router archive l'ancien (SKILL.md, « Router et workers ») |
 | Un worker muet, en boucle, ou qui dépasse le double de sa durée attendue | Le geste de « Seuils » (Surveillance), à chaque réveil et à chaque tour de l'utilisateur : session → `list_sessions` ; sous-agent sans message → un seul `SendMessage` « ÉTAT ? » et une ligne à l'utilisateur. Puis : préciser la tâche, ou `STOP` et relancer. Pas de boucle d'attente |
 | Des flux indépendants attendent dans un seul worker | `STOP` sur les tâches non commencées, puis un worker chacun |
-| Permission qui bloque un worker, tests lents | Le signaler à l'utilisateur, avec la permission ou le réglage à ajouter |
+| Permission qui bloque un worker | Le dire tout de suite à l'utilisateur, avec la permission à ajouter : c'est un accès qui manque, donc une décision humaine |
+| Tests lents | Une ligne dans le rapport, avec le réglage à proposer |
 
 ## 4. Bloc à ajouter au brief (chaque worker a sa PR sur la même base)
 

@@ -4,7 +4,7 @@ Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et appliqu
 
 Le `prompt` de tout worker lancé par le router, sous-agent (`Agent`) ou session
 (`start_session`). Lis ce fichier une fois, au premier lancement ; remplis les `<…>` à chaque
-tâche ; ne retire aucune règle.
+tâche ; ne retire aucune règle, sauf la règle « PR » quand la tâche n'a pas de PR.
 
 - La première ligne est `WORKER <name>`, exactement : c'est à elle qu'un worker se reconnaît
   (SKILL.md, « Quand tu ne délègues pas »).
@@ -12,8 +12,14 @@ tâche ; ne retire aucune règle.
   ensemble, ici et dans les briefs d'équipe (`sessions-mode.md`, `team-mode.md`).
 - Ligne « Livraison » : dis où le résultat doit arriver. Sans branche ni PR, le worker écrit
   dans le dossier de l'utilisateur (SKILL.md, « Le cycle d'une tâche », étape 2, « Isolation »).
-- Règle « PR » : garde une seule des deux variantes, selon que le worker est une session ou un
-  sous-agent. Sans PR, retire la règle.
+- Sous-agent qui crée son worktree à la main (autre dépôt, branche existante, session hors d'un
+  dépôt git) : écris dans « Livraison » le chemin du dépôt et la commande qui convient :
+  - branche existante, pas sortie ailleurs : `git worktree add <chemin> <branche>` ;
+  - branche nouvelle : `git worktree add -b <branche> <chemin> <base>` ;
+  - branche déjà sortie dans le dossier de l'utilisateur (git répond « is already used by
+    worktree ») : une nouvelle branche partie d'elle,
+    `git worktree add -b <branche>-<tâche> <chemin> <branche>`, et le worker le dit dans son
+    rapport.
 - Plusieurs PR sur la même base : ajoute aux Règles le bloc de `flux.md` §4 (rebase).
 - « Durée attendue » : ton estimation. Un worker qui la double t'écrit ; décide alors de le
   laisser finir, de préciser la tâche, ou de l'arrêter (`STOP`).
@@ -57,10 +63,13 @@ Règles :
   400 premiers caractères : fait ou non, chaque ligne passe ou non, où est le résultat (chemin,
   branche, PR). Puis : la commande et sa sortie pour chaque ligne d'Eval, tes choix par défaut,
   et ce qui t'a fait perdre du temps ("FRICTION : <quoi, temps perdu, idée>").
-- PR : la première ligne de ton rapport est <session : "PRÊT À MERGER — <URL complète>", une
-  fois la CI verte | sous-agent : "PR OUVERTE — <URL complète>", sans attendre la CI>. Aucun
-  autre message sur la PR. Ne merge jamais sans "MERGE — <URL>" du router ; sur ce message,
-  merge avec la méthode du dépôt (`gh pr merge <URL>`, règles du dépôt), puis réponds
+- PR : après l'avoir ouverte, attends sa CI avec UNE commande bloquante,
+  `gh pr checks <URL> --watch` (10 minutes au plus, pas de boucle). CI verte, ou dépôt sans CI
+  (« no checks reported ») : la première ligne de ton rapport est
+  "PRÊT À MERGER — <URL complète>". CI pas finie après 10 minutes :
+  "PR OUVERTE — <URL complète> — CI en cours". CI rouge : corrige, et attends de nouveau.
+  Aucun autre message sur la PR. Ne merge jamais sans "MERGE — <URL>" du router ; sur ce
+  message, merge avec la méthode du dépôt (`gh pr merge <URL>`, règles du dépôt), puis réponds
   "MERGÉ — <URL>".
 - Sur "ÉTAT ?" du router : réponds en une ligne (où tu en es, ce qui te bloque).
 - Sur "STOP — <raison>" du router : arrête-toi, et dis où en sont ta branche et ta PR.

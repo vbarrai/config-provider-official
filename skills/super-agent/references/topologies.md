@@ -93,8 +93,9 @@ le patron ne sert à rien ; reformule-les avant de lancer.
 Une hypothèse confirmée par 3 agents sans preuve reste « non confirmée ».
 
 **Livrable par défaut** : réponse dans le chat ou court rapport : cause, preuves, correctif
-proposé. Si le correctif est du code, enchaîne sur le patron 4 (nouveau plan, montré à
-l'utilisateur : `equipe.md`, étape 4).
+proposé. Si le correctif est du code : il tient en un worker → un sous-agent, sans second
+plan ; sinon, enchaîne sur le patron 4 (nouveau plan, montré à l'utilisateur : `equipe.md`,
+étape 4).
 
 **Piège** : en production, aucun agent n'agit (redémarrage, écriture, purge). Lecture seule.
 
