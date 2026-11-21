@@ -1,7 +1,7 @@
 {
   "hooks": {
     "super-agent-reminder": {
-      "description": "On session start, remind the agent to invoke the `super-agent` skill whenever a message asks it to do something during the session.",
+      "description": "On session start, remind the agent to invoke the `super-agent` skill whenever a message asks for an action (something it cannot answer without a tool), unless the skill is already loaded in the conversation or the session is itself a worker.",
       "claude-code": {
         "SessionStart": [
           {
