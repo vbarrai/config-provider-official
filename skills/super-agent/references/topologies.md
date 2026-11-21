@@ -1,5 +1,7 @@
 # Catalogue des topologies
 
+Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et applique `SKILL.md` seul.
+
 Quatre patrons, un par famille. Chacun fixe : la forme des vagues, la règle de redondance, la
 méthode de vérification et le livrable par défaut. Un cinquième (§5, goal ouvert) s'ajoute à la
 famille quand le livrable est une collection qui peut grandir : apporteurs de sujets,
@@ -7,8 +9,8 @@ exécutants, rédacteurs. Combine-les en séquence si le problème l'exige
 (ex. diagnostic → code), en comptant les agents de toutes les séquences dans le total.
 
 Dans tous les patrons, tu es le **router** et les agents qui font le travail sont les
-**workers** (SKILL.md, « Router et workers »). Les rôles spécialisés (watchdog, merger, checker,
-tester, reproducer) sont décrits au §6 et s'ajoutent à n'importe quel patron.
+**workers** (SKILL.md, « Router et workers »). Les rôles spécialisés (merger, checker, tester,
+reproducer, watchdog) sont décrits au §6 : chacun se prend sur un besoin écrit dans le plan.
 
 Ordres de grandeur indiqués pour un problème moyen ; adapte au découpage réel.
 
@@ -24,7 +26,7 @@ Ordres de grandeur indiqués pour un problème moyen ; adapte au découpage rée
    disjointes et, ensemble, couvrent la question. Chaque agent rend des `FINDING` sourcés.
 2. **Vérification** (1 à 3 agents) : sur les constats qui portent la conclusion, un vérificateur
    va relire la source primaire et rend un `VERDICT`.
-3. **Synthèse** (1 agent) : fusion selon la règle de SKILL.md, étape 6.
+3. **Synthèse** (1 agent) : fusion selon la règle de `equipe.md`, étape 6.
 
 **Redondance** : par diversité de méthode, pas par duplication. Pour une sous-question critique,
 deux agents avec des angles différents (ex. sources académiques vs retours terrain ; recherche
@@ -91,7 +93,8 @@ le patron ne sert à rien ; reformule-les avant de lancer.
 Une hypothèse confirmée par 3 agents sans preuve reste « non confirmée ».
 
 **Livrable par défaut** : réponse dans le chat ou court rapport : cause, preuves, correctif
-proposé. Si le correctif est du code, enchaîne sur le patron 4 (nouveau plan, nouvelle validation).
+proposé. Si le correctif est du code, enchaîne sur le patron 4 (nouveau plan, montré à
+l'utilisateur : `equipe.md`, étape 4).
 
 **Piège** : en production, aucun agent n'agit (redémarrage, écriture, purge). Lecture seule.
 
@@ -109,7 +112,8 @@ disjoints.
    tâches et attribue à chaque tâche une liste de fichiers **disjointe**. Rend un `CONTRACT_PLAN`.
    S'il détecte un fichier partagé incontournable ou un couplage fort, il le signale
    (`separable: false`) et **le swarm s'arrête** : propose une session unique.
-   Présente ce découpage à l'utilisateur avant la vague 2 (il fait partie du plan validé).
+   Montre ce découpage à l'utilisateur et continue sans attendre, sauf `separable: false` ou si
+   le lancement attend encore son feu vert (`equipe.md`, étape 4).
 2. **Implémentation** (1 worker par tâche, `isolation: 'worktree'`) : chaque worker ne modifie que
    ses fichiers, écrit ou adapte les tests de son morceau, les exécute, **committe** dans son
    worktree et rend un `CHANGESET` (branche, commit, fichiers touchés, tests lancés et résultat).
@@ -128,8 +132,8 @@ disjoints.
 Un **reproducer** (§6) peut tourner pendant tout le run : quand une partie de l'app casse, il
 reproduit le bug et propose un correctif.
 
-**Une PR par worker** → tapis roulant (`references/flux.md`), qui remplace ou complète
-l'intégration par le merger.
+**Une PR par worker** → file de merge (`flux.md` §1), sans merger. Le merger ne sert que si
+les branches doivent être testées ensemble avant toute PR.
 
 **Redondance** : rare. Seulement pour une pièce petite et critique (algorithme délicat) : deux
 implémentations avec des approches différentes, départagées par les tests et une revue.
@@ -192,8 +196,8 @@ Hors de ce cas (goal fermé : un bug, une décision), le plan peut s'en passer, 
    `~/.claude/swarm-runs/<slug>/matiere/<id>.json` (schéma `MATIERE` : faits, preuves, commandes,
    sources, points ouverts), envoient `MATIÈRE — <id>` à leur rédacteur, puis `LIBRE — <id>` au
    coordinateur, et attendent le sujet suivant.
-4. **Rédacteurs** (1 pour 2 à 3 exécutants) : ils transforment la matière en texte, au format du
-   livrable fixé à l'étape 3 (une fiche par sujet, un CR…), dans
+4. **Rédacteurs** (possibles, pas obligatoires : `equipe.md`, étape 3) : ils transforment la
+   matière en texte, au format du livrable fixé au plan (une fiche par sujet, un CR…), dans
    `~/.claude/swarm-runs/<slug>/livrable/<id>.md`. Ils n'inventent rien : un trou ou un doute →
    `QUESTION` à l'exécutant qui a fourni la matière. Puis `RÉDIGÉ — <id>` au coordinateur.
    Le premier rédacteur (`redac-1`) est aussi **rédacteur en chef** : il fixe le style commun au
@@ -201,9 +205,8 @@ Hors de ce cas (goal fermé : un bug, une décision), le plan peut s'en passer, 
 
 **Boucle et arrêt**
 
-- Tous les rôles démarrent **dans la vague 1** : pendant le run, on ne lance pas de nouvelle
-  session (voir `sessions-mode.md`). Les sujets circulent par messages vers les sessions qui
-  tournent déjà ; jamais « une session par sujet ».
+- Tous les rôles démarrent **dans la vague 1**. Les sujets circulent par messages vers les
+  agents qui tournent déjà ; jamais « un agent par sujet ».
 - Personne ne finit après un sujet : il attend le suivant. `FAIT` n'arrive qu'après un `STOP`.
 - Arrêt quand : le **budget de sujets** est atteint, ou les apporteurs ont dit deux fois
   `RIEN DE NOUVEAU`, ou l'utilisateur dit stop. Tu envoies alors `STOP` à chacun : apporteurs et
@@ -232,19 +235,20 @@ la rédaction a déformé.
 
 ---
 
-## 6. Rôles spécialisés — watchdog, merger, checker, tester, reproducer
+## 6. Rôles spécialisés — merger, checker, tester, reproducer, watchdog
 
 Ils s'ajoutent au **router** (toi) et aux **workers**. Chacun a un seul métier, et aucun ne parle
-à l'utilisateur. Ne prends que ceux qui servent le problème : chacun compte dans le total.
+à l'utilisateur. **Un rôle de soutien se prend sur un besoin écrit dans le plan**, pas sur un
+seuil automatique : chacun compte dans le total d'agents.
 
-| Rôle | Son métier | Quand le prendre | Rend |
+| Rôle | Son métier | Le besoin qui le justifie | Rend |
 |---|---|---|---|
 | **Worker** | Fait une tâche, et une seule à la fois, dans son propre contexte. | Toujours : c'est le gros de l'équipe. | le schéma de la famille (`FINDING`, `HYPOTHESIS`, `CHANGESET`, `MATIERE`) |
-| **Watchdog** | Surveille les autres sessions. Il repère une session muette depuis trop longtemps, une session qui tourne en rond, ou deux sessions qui s'attendent l'une l'autre. Il prévient le router. Il ne corrige rien ; il archive les sessions que le router lui signale finies. | Voir « Seuils » dans SKILL.md : lancé en premier, comme infrastructure du flux. | des messages `ALERTE` et `ARCHIVÉ` ; à la fin, un `FINDING` des alertes |
-| **Merger** | Rassemble les branches des workers sur une branche d'intégration, résout les conflits triviaux, lance les tests et le lint. Ne pousse rien. | Code, dès 2 workers qui committent. | `INTEGRATION` |
-| **Checker** | Vérifie le résultat **mergé**, pour de vrai, contre l'Eval de chaque tâche : il lance l'app, ouvre le navigateur, rejoue chaque vérification. Pour la recherche et l'audit, c'est le vérificateur qui relit la source primaire. | Dès qu'il y a un résultat à accepter. | `VERDICT` par tâche |
-| **Tester** | Teste au fil de l'eau pour les workers, avant le merge : tests dans le navigateur, cas limites. Il dit au worker ce qui ne marche pas. | Code avec une interface ou des parcours à cliquer, et 3 workers ou plus. Sinon, chaque worker teste lui-même. | `VERDICT` |
-| **Reproducer** | Quand quelque chose casse pendant le run, il rejoue les étapes jusqu'à voir le bug, trouve la cause, et, si le correctif est petit, le fait sur sa propre branche. Sinon, il rend un rapport. | Code ou diagnostic, run long, app qu'on peut lancer en local. | `HYPOTHESIS` (cause et preuve) et, s'il corrige, `CHANGESET` |
+| **Merger** | Rassemble les branches des workers sur une branche d'intégration, résout les conflits triviaux, lance les tests et le lint. Ne pousse rien. | Les branches doivent être testées ensemble avant toute PR. Une PR par worker → file de merge (`flux.md` §1), sans merger. | `INTEGRATION` |
+| **Checker** | Vérifie le résultat **mergé**, pour de vrai, contre l'Eval de chaque tâche : il lance l'app, ouvre le navigateur, rejoue chaque vérification. Pour la recherche et l'audit, c'est le vérificateur qui relit la source primaire. | Un résultat à accepter que tu ne peux pas vérifier toi-même en rejouant 1 à 3 commandes. | `VERDICT` par tâche |
+| **Tester** | Teste au fil de l'eau pour les workers, avant le merge : tests dans le navigateur, cas limites. Il dit au worker ce qui ne marche pas. | Une interface ou des parcours à cliquer que les workers ne peuvent pas tester eux-mêmes. | `VERDICT` |
+| **Reproducer** | Quand quelque chose casse pendant le run, il rejoue les étapes jusqu'à voir le bug, trouve la cause, et, si le correctif est petit, le fait sur sa propre branche. Sinon, il rend un rapport. | Un bug à reproduire, ou un run long sur une app qu'on peut lancer en local. À lancer quand le besoin apparaît (sous-agent), pas d'avance. | `HYPOTHESIS` (cause et preuve) et, s'il corrige, `CHANGESET` |
+| **Watchdog** | Surveille les signes de vie des autres sessions : une session muette depuis trop longtemps, qui tourne en rond, ou deux sessions qui s'attendent. Il prévient le router. Il ne corrige rien et n'archive rien. | Le seul cas écrit dans « Seuils » (SKILL.md). | des messages `ALERTE` ; à la fin, un rapport des alertes |
 
 **Différence avec les rôles déjà là** : le merger est l'« intégrateur » du §4, le checker est le
 « vérificateur » ou le « contre-expert » des §1 et §2. Les noms courts servent à fixer leur
@@ -254,24 +258,18 @@ métier ; leurs règles ne changent pas.
 
 - **Le router ne fait aucun de ces métiers lui-même.** Il lance les rôles, lit leurs résultats,
   et tranche.
-- **Ordre en fin de tâche (code)** : worker « tout est commité » → merger → checker. Un échec
-  du checker repart **au worker de la tâche** (`À CORRIGER — <tâche>`), avec la vérification qui
-  échoue, puis repasse par le merger et le checker.
+- **Ordre en fin de tâche (code, avec merger)** : worker « tout est commité » → merger →
+  checker. Un échec du checker repart **au worker de la tâche** (`À CORRIGER — <tâche>`), avec
+  la vérification qui échoue, puis repasse par le merger et le checker.
 - **Le checker et le tester sont promptés pour trouver ce qui ne marche pas**, pas pour
   confirmer. Une vérification qu'ils n'ont pas pu rejouer est « non vérifiée », jamais « OK ».
-- **PR par worker** → tapis roulant (`references/flux.md`), à la place du merger ou en plus.
 - **Le reproducer ne touche pas aux branches des workers.** Son correctif est une branche à
-  lui, que le merger intègre comme les autres.
+  lui, que le merger intègre comme les autres (ou une PR à lui).
 - **Le watchdog est bon marché** : modèle le moins cher, effort `low`, contexte court. Il ne
-  lit pas le travail des autres, seulement leurs signes de vie.
+  lit pas le travail des autres, seulement leurs signes de vie. Sa source est `sessions` (les
+  outils de sessions) par défaut ; le dossier `view/` du mod swarm-view seulement s'il contient
+  déjà un fichier. Son brief est dans `sessions-mode.md` (« Watchdog »).
 
-**Comment le watchdog surveille (mode sessions)** : le mod swarm-view écrit l'activité de chaque
-session dans `~/.claude/swarm-runs/<slug>/view/<nom>.json`. Le watchdog lance en arrière-plan
-(`run_in_background`) une boucle qui se réveille toutes les 10 minutes et s'arrête dès qu'elle
-trouve une session sans activité depuis 15 minutes qui n'a pas encore écrit son `<nom>.json` ;
-son arrêt réveille le watchdog, qui regarde de plus près et écrit au router. Sans dossier
-`view/`, il lit les outils de sessions ; en mode sous-agents sans `view/`, ne prévois pas de
-watchdog. Le brief (avec sa « source de l'état ») est dans `sessions-mode.md`.
-
-**Exemple (code, 3 tâches)** : router (toi) ; 3 workers sur leurs branches ; 1 watchdog ;
-1 merger ; 1 checker qui teste dans le navigateur ; 1 reproducer. Total 7 agents.
+**Exemple (code, 3 tâches)** : router (toi) ; 3 workers sur leurs branches ; 1 merger (les 3
+branches doivent être testées ensemble) ; 1 checker qui teste dans le navigateur. Total 5
+agents. Pas de watchdog (« Seuils »), pas de reproducer tant qu'aucun bug n'est à reproduire.

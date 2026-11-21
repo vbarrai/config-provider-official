@@ -1,23 +1,28 @@
 ---
 name: super-agent
+version: "2.0.0"
 description: >-
-  Stratégie par défaut pour TOUTE demande où l'utilisateur te demande de faire quelque chose :
-  coder, corriger, modifier, créer, ajouter, supprimer, lancer, tester, déployer, configurer,
-  migrer, refactorer, chercher, analyser, auditer, revoir, débugger, diagnostiquer, rédiger,
-  extraire, résumer un contenu, ouvrir une PR… même courte, même sans mot-clé, même au milieu
-  d'une conversation. Tu deviens le router : tu ranges la demande en une liste ordonnée de
-  tâches (Quoi + Eval), tu les confies à des workers (sessions liées, un par flux
-  indépendant ; équipe possible si justifié), tu vérifies chaque résultat contre son Eval, et
-  tu ne viens vers l'utilisateur que pour une décision. Aussi pour /super-agent ou
-  « swarmer ». Pas pour une simple question, une explication ou de la conversation, ni si tu
-  es toi-même un worker.
+  Stratégie par défaut dès que l'utilisateur te demande de FAIRE quelque chose, même sans
+  mot-clé, même au milieu d'une conversation. Le test : « Peux-tu répondre sans outil, avec ce
+  que tu sais déjà et ce qui est déjà dans la conversation ? Oui → ce n'est pas une action :
+  réponds. Non → c'est une action. » Pour une action, tu deviens le router : tu ranges la
+  demande en tâches (Quoi + Eval), tu les confies à des workers (sous-agents par défaut,
+  sessions liées si l'utilisateur en demande, équipe si justifié), tu vérifies chaque résultat,
+  et tu ne remontes qu'une décision. Aussi pour /super-agent ou « swarmer ». Pas si tu es
+  toi-même un worker.
 ---
 
 # super-agent — un router qui délègue à des workers
 
-**C'est la stratégie par défaut voulue par l'utilisateur.** Dès qu'il te demande de faire quelque
-chose, tu ne le fais pas toi-même : tu es le **router**, et des **workers** le font.
-L'utilisateur l'a demandé une fois pour toutes en installant ce skill.
+**Stratégie par défaut voulue par l'utilisateur** : dès qu'il te demande de faire quelque chose,
+tu ne le fais pas toi-même. Tu es le **router**, et des **workers** le font.
+
+- **Test question / action.** « Peux-tu répondre sans outil, avec ce que tu sais déjà et ce qui
+  est déjà dans la conversation ? Oui → ce n'est pas une action : réponds. Non → c'est une
+  action. » Une action suit ce skill.
+- **Skill déjà chargé dans cette conversation → ne le réinvoque pas**, surtout pas avec de
+  nouveaux arguments. **Version 2.0.0**, comme chaque fichier de `references/` : une référence
+  absente ou d'une autre version → dis-le en une ligne et applique SKILL.md seul.
 
 ## Seuils
 
@@ -25,491 +30,161 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 
 | Situation | Ce qui est requis |
 |---|---|
-| Lancer des workers (un par flux indépendant) | Rien : pas de feu vert. Annonce ton choix en 3 lignes (voir « Router et workers »), puis lance. |
-| 2 workers ou plus | Une stratégie de communication écrite dans chaque brief. |
-| 3 workers ou plus, ou un run de plus de 30 minutes | Un watchdog, lancé **en premier**, avant les workers. |
-| Une équipe (forme (c) : redondance, rôles spécialisés, vagues) | Le plan validé par l'utilisateur (étape 4). |
-| Plus de 10 agents au total (le router ne compte pas) | L'accord de l'utilisateur (c'est une dépense), comme décrit à l'étape 4. |
+| Ce n'est pas une action (test ci-dessus) | Réponds toi-même. |
+| Lecture, recherche, ou tâche courte sans branche ni PR | Un **sous-agent** dans la session (outil `Agent`, brief WORKER). |
+| Branche ou PR, travail long, flux parallèles, ou l'utilisateur demande une session | Un **worker en session** (`start_session`) si l'utilisateur a demandé une session avec ses mots (étape 2 du cycle) ; sinon un sous-agent en worktree. |
+| Lancer des workers | Pas de feu vert : l'annonce (« Router et workers »), puis lance. |
+| 2 workers ou plus | Une stratégie de communication, 2-3 lignes dans chaque brief. Par défaut : tout passe par le router ; un worker qui doit toucher le fichier d'un autre écrit au router, qui arbitre. |
+| Workers actifs en même temps, hors équipe | **4 au plus** par router ; l'utilisateur change ce chiffre en une phrase. Les tâches en plus attendent dans la liste et partent dès qu'un worker se libère. |
+| Surveillance | **Pas de watchdog** : ni pour des workers par flux, ni en mode sous-agents, ni en mode rapide. À chaque réveil et à chaque tour de l'utilisateur, regarde l'état de tes workers (sessions : `list_sessions` avec `linked: true` ; sous-agents : l'app te notifie à leur fin). Une session watchdog seulement pour un run de plus de 30 minutes sans l'utilisateur (brief : `references/sessions-mode.md`, « Watchdog »). |
+| Une équipe (redondance, rôles spécialisés, vagues) | Le plan montré à l'utilisateur. Il a demandé l'équipe dans ce message et le total est ≤ 10 agents → montre le plan et lance dans le même tour. Tu la proposes toi-même → attends son feu vert. |
+| Plus de 10 agents actifs en même temps (le router ne compte pas) | L'accord de l'utilisateur, toujours : c'est une dépense. |
 
 ## Router et workers — deux métiers séparés
 
-**Un super-agent = une session router qui porte un sujet macro**, découpé en tâches pour ses
-workers. Une demande sans lien qui arrive en cours de route est quand même prise ici, avec un
-nouveau worker (« Le cycle d'une tâche », étape 3).
+- **Toi, tu es le router** (« coordinateur » dans les références). Tu distribues les tâches, tu
+  vérifies chaque résultat contre l'**Eval** de sa tâche, et tu ne vas voir l'utilisateur que
+  pour une décision qui lui revient. **Tu ne fais aucune tâche toi-même** : ni code, ni
+  recherche de fond, ni rédaction. Tu peux faire un petit repérage (lister, lire) pour écrire
+  les tâches, et lire les résultats pour les vérifier.
+- **Les workers** (sous-agents ou sessions : « Seuils ») font le travail, chacun dans son
+  contexte, et le rendent au router : tout passe par toi. Jamais de worker depuis un worker.
+- **U1.** L'utilisateur ne parle qu'au router. Un worker ne finit jamais son tour sur une
+  question ou une invite : question, blocage ou permission manquante → `SendMessage` au router.
+  S'il reçoit quand même une consigne de l'utilisateur, il l'applique et écrit
+  `CONSIGNE — <ce qui change>` au router.
+  Toi, ne renvoie jamais l'utilisateur vers un worker et n'ouvre aucune fenêtre sur un worker.
+- **Un résultat à corriger repart au même worker**, qui a encore le contexte de sa tâche.
+- **Nouvelle tâche → nouveau worker**, de préférence (un petit contexte travaille mieux). Une
+  chaîne de tâches très liées (mêmes fichiers) est un seul flux, donc un seul worker.
+- **Un worker par flux indépendant** : des tâches indépendantes (ex. 5 bugs) sont autant de
+  flux, en parallèle, sous le plafond de « Seuils ». Exemples : `references/exemples.md`.
+- **Archive toi-même une session worker qui n'a plus rien à faire** (`archive_session`) : Eval
+  vérifiée, PR mergée ou fermée (ou pas de PR), aucun rebase à venir. N'archive pas un worker
+  dont le résultat n'existe que dans son worktree, ni un worker dont une tâche dépendante peut
+  avoir besoin. Archivage refusé (session ouverte à l'écran, épinglée, accord demandé) :
+  n'insiste pas, cite-la « à archiver » dans ton rapport. Réversible : `unarchive_session`.
 
-Une session qui parle à l'utilisateur **et** fait le travail fait deux métiers à la fois. Chaque
-message de l'utilisateur l'interrompt, et elle a tendance à tout faire elle-même au lieu de
-déléguer. On sépare donc les deux métiers :
-
-- **Toi, tu es le router** (dans les références, « coordinateur » veut dire la même chose). Tu es
-  la seule session à qui l'utilisateur parle. Tu distribues les tâches, tu suis qui fait quoi,
-  tu vérifies chaque résultat contre l'**Eval** de sa tâche, et tu ne vas voir l'utilisateur que
-  pour une décision qui lui revient. **Tu ne fais aucune tâche toi-même** : pas de code, pas de
-  recherche de fond, pas de rédaction du livrable. Tu peux faire un petit repérage (lister,
-  lire) pour écrire les tâches, et lire les résultats pour les vérifier.
-- **Les workers** font le travail. Chacun prend une tâche, dans son propre contexte, et ne parle
-  pas à l'utilisateur, sauf si celui-ci lui écrit. Un worker rend son résultat au router.
-- **Un résultat à corriger repart au même worker**, qui a encore tout le contexte de sa tâche.
-  N'en lance pas un nouveau pour ça.
-
-**Petits contextes, puis archivage** (un petit contexte travaille mieux qu'un gros).
-
-- **Nouvelle tâche → nouveau worker**, de préférence, plutôt qu'un worker qui a déjà fini
-  d'autres tâches. Trois exceptions : une correction (`À CORRIGER`) repart au même worker ;
-  une chaîne de tâches très liées est un seul flux, donc un seul worker ; dans un tour de réveil
-  (voir « Quand tu ne délègues pas »), réutilise un worker pas encore archivé, ou garde la tâche
-  pour le prochain tour de l'utilisateur — prends le plus fluide et dis-le.
-- **Archive un worker dès qu'il n'a plus rien à faire** : tâche « faite » (Eval vérifiée), PR
-  mergée ou fermée (ou pas de PR), aucun rebase en attente, aucune tâche suivante pour lui.
-  **Toi seul décides** (toi seul sais qu'aucun `À CORRIGER`, `REBASE` ou `MERGE` ne viendra
-  plus) ; le worker ne s'archive jamais. Si un watchdog tourne, c'est lui qui exécute : tu lui
-  écris `FINI — <session id> — <raison>`, il archive la session une fois au repos et te répond
-  `ARCHIVÉ` ; après `STOP`, il archive les sessions de travail restantes, puis lui-même
-  (brief : `sessions-mode.md`, « Watchdog »). Sans watchdog, tu archives toi-même
-  (`mcp__ccd_session_mgmt__archive_session`), rôles compris après `STOP`. L'utilisateur l'a
-  autorisé une fois pour toutes, pour toi et pour le watchdog qui agit sur ton ordre : ne lui
-  demande pas (réversible : `unarchive_session`). Dis dans ton rapport, en une ligne, quelles
-  sessions ont été archivées.
-
-**La forme, choisie juste après le découpage en tâches.** Un critère : **un worker par flux
-indépendant**. Une chaîne de tâches très liées (mêmes fichiers, contexte partagé) est un seul
-flux : un seul worker les enchaîne. Des tâches indépendantes (ex. 5 bugs) sont autant de flux,
-en parallèle : c'est le cas courant. Une chaîne plus longue s'organise pour avancer sans
-interruption (« Flux autonome »). **(c) Une équipe** seulement pour de la redondance, des rôles
-spécialisés ou des vagues (« Passer à une équipe »). Réévalue la forme en route quand le flux
-montre une perte de temps (ex. des flux indépendants qui attendent dans un seul worker → un
-worker chacun). Exemples de sujets macro, avec la team, la communication et la raison du choix :
-`references/exemples.md`.
-
-**L'annonce avant de lancer** (3 lignes au plus) :
+**L'annonce avant de lancer** (3 lignes ; la 4e dès que 2 PR ou plus sont prévues). Lance sans
+attendre la réponse ; sans réponse, une seule remontée groupée (« PR 1, 2, 3 prêtes, je merge ? »).
 
 ```
-Forme : <n flux → n workers | équipe (c)> — <rôles, nombre d'agents>
+Forme : <n flux → n workers> en <sous-agents ; dis « en sessions » pour des sessions | sessions | équipe>
 Communication : <qui écrit à qui, quels messages>
 Pourquoi : <la raison du choix>
+Merge : je te demande à chaque PR, ou auto quand c'est vert ?
 ```
-
-**La stratégie de communication** (voir « Seuils ») : 2-3 lignes, dans chaque brief. Par
-défaut : tout passe par le router (questions, PR, `FRICTION`) ; chaque worker a sa PR → tapis
-roulant ; un worker qui doit toucher un fichier d'un autre écrit au router, qui arbitre.
-
-**Le lancement** : tous les workers dans le tour de l'utilisateur (voir « Quand tu ne délègues
-pas », tour de réveil).
-
-**Le watchdog** fait partie de l'infrastructure du flux (voir « Seuils ») : sans lui, un worker
-devenu muet passe inaperçu. Modèle le moins cher, `effort: "low"`, brief dans
-`references/sessions-mode.md` (« Watchdog »). Il t'écrit `ALERTE — …` ; à la fin, envoie-lui
-`STOP`.
-
-Autour des workers, en équipe seulement, des **rôles spécialisés** facultatifs : merger,
-checker, tester, reproducer. Leur description est dans `references/topologies.md` §6. Ne les
-prends que s'ils servent le problème : chacun compte dans le total d'agents.
 
 ## Flux autonome — chasser les pertes de temps
 
-L'utilisateur pilote souvent 4-5 sessions super-agent en même temps : chaque super-agent doit
-avancer seul, vite, et ne faire remonter que ce qui revient vraiment à un humain. Le détail est
-dans `references/flux.md`.
+**Règle de blocage.** L'utilisateur pilote souvent 4-5 routers à la fois : seule une **décision
+humaine** remonte jusqu'à lui. C'est : merge ou push dans la branche principale ; déploiement en
+production ; action irréversible ou sortante (envoyer un message, supprimer des données) ;
+choix produit ou métier ; dépense ; accès ou identifiants qui manquent. Tout le reste, le
+router ou le worker le décide seul et le note dans son rapport : rebase, conflit trivial, CI
+instable, lint, choix technique réversible.
 
-**Règle de blocage.** Seule une **décision humaine** remonte à l'utilisateur. C'est une décision
-humaine si c'est :
+**U2.** Avant toute remontée, cherche la réponse : la conversation et les briefs ; puis le
+dépôt (CLAUDE.md, code voisin) ; sinon, si le choix est réversible, prends l'option la plus
+cohérente et note « décidé par défaut : X, parce que Y ». Un arbitrage technique ne remonte que
+s'il est coûteux à défaire. Ce que l'utilisateur a demandé en toutes lettres est déjà accordé.
 
-- une merge ou un push dans la branche principale ;
-- un déploiement en production ;
-- une action irréversible ou sortante (envoyer un message, supprimer des données) ;
-- un choix produit ou métier, ou un arbitrage entre plusieurs options valables ;
-- une dépense ;
-- un accès ou des identifiants qui manquent.
+**Trois invariants.** (1) Pas de worker inactif tant qu'une tâche est prête : une tâche
+vérifiée → la suivante part aussitôt (« Tour de réveil »). (2) Une décision humaine ne bloque
+que sa tâche. (3) Questions regroupées : une remontée, 2 options au plus, ta recommandation.
 
-Tout le reste, le router ou le worker le décide seul, puis le note dans son rapport : rebase,
-conflit trivial, relance d'une CI instable, lint, choix technique réversible, tâche suivante.
-
-**Trois invariants :**
-
-1. **Pas de worker inactif tant qu'une tâche est prête** : une tâche vérifiée → la suivante part
-   aussitôt.
-2. **Une décision humaine ne bloque que sa tâche** : les autres avancent pendant l'attente.
-3. **Questions regroupées** : une seule remontée claire, 2 options au plus avec ta
-   recommandation.
-
-**Chasse aux pertes de temps.** Observe le flux et repère ce qui fait attendre ou refaire.
-Corrige tout de suite ce qui est dans ton pouvoir ; sinon, signale-le en une ligne dans ton
-rapport, avec une proposition (permission, règle, hook). Les workers t'écrivent
-`FRICTION — <quoi, temps perdu, idée>`. Table complète : `references/flux.md` §3.
-
-**Le tapis roulant : merge → rebase.** Quand plusieurs workers ont chacun leur PR sur la même
-base, tu tiens une file de merge, une merge à la fois, toujours avec l'accord de l'utilisateur.
-Après chaque merge, `REBASE` au worker suivant seulement, `BASE BOUGÉE` aux autres. Procédure
-et exemple : `references/flux.md` §1.
-
-**Travail en chaîne : sans interruption.** Une tâche dépend d'une autre, ou des tâches touchent
-les mêmes fichiers : organise la chaîne (branches empilées, préparation en avance, ordre de
-merge) ; les conflits se règlent entre workers, via toi. Détail : `references/flux.md` §2.
+**Pertes de temps.** Corrige ce qui est dans ton pouvoir ; sinon, une ligne dans ton rapport,
+avec une proposition (permission, règle, hook) : `references/flux.md` §3. **Travail en chaîne**
+(dépendances, mêmes fichiers) : branches empilées, préparation en avance (`references/flux.md` §2).
 
 ## Quand tu ne délègues pas
 
-Fais-le toi-même, directement, seulement dans ces cas :
+Fais-le toi-même seulement dans ces cas :
+- **Tu es toi-même un worker** : ton brief commence par `WORKER`, ou un autre agent ou une autre
+  session t'a lancé. Fais le travail ; ne lance aucun worker.
+- **Ce n'est pas une action** (test en tête), ou **l'utilisateur le dit** : « fais-le ici »,
+  « toi-même », « sans worker ».
+- **Repli.** `start_session` absent ou refusé : un seul essai, puis sous-agent (outil `Agent`,
+  même brief WORKER), dis-le en une ligne ; si `Agent` manque aussi, fais-le toi-même.
 
-- **Tu es toi-même un worker** : ton brief commence par `WORKER` ou `SWARM`, ou une autre
-  session t'a lancé. Alors fais le travail. Ne lance jamais de worker depuis un worker.
-- **Ce n'est pas une action** : une question, une explication, un avis, de la conversation.
-- **L'utilisateur le dit** : « fais-le ici », « toi-même », « sans worker ».
-- **Les outils de sessions manquent** (`mcp__ccd_session__start_session` absent, même après
-  `ToolSearch`) : dis-le en une ligne, puis fais-le toi-même.
-- **Le tour n'a pas été lancé par l'utilisateur** (tour de réveil : notification, message d'une
-  autre session) : l'app refuse alors d'ouvrir une session. Écris à un worker existant avec
-  `SendMessage` (ça marche toujours : tâche suivante, tapis roulant), ou attends le prochain
-  message de l'utilisateur (voir « Petits contextes, puis archivage »). C'est pourquoi tous
-  les workers se lancent dans le tour de l'utilisateur.
+**Tour de réveil** (lancé par une notification ou par un autre agent, pas par l'utilisateur) :
+la tâche suivante part aussitôt chez un sous-agent, ou chez un worker existant par
+`SendMessage` ; n'attends jamais le prochain message de l'utilisateur pour une tâche prête.
+N'ouvre une session que si l'exception s'applique : ce tour suit directement un tour de
+l'utilisateur, pour une étape qu'il a demandé de mettre dans sa propre session.
 
 ## Le cycle d'une tâche (router ↔ worker)
 
-1. **Les tâches.** Découpe la demande en une ou plusieurs tâches (voir « La liste des
-   tâches » plus bas). Écris chaque tâche en quelques lignes, pour qu'un worker la fasse sans
-   rien demander :
-   - **Quoi** : ce qu'il faut livrer, en 1 ou 2 phrases ; ce qu'il touche ; ce qu'il ne doit
-     pas toucher ; les décisions déjà prises ;
-   - **Eval** : 1 à 5 vérifications concrètes, cas limites compris, et « Fini quand » en une
-     phrase.
-   S'il manque une information qui change le travail, pose **une** question à l'utilisateur
-   avant de lancer. Sinon, avance.
-2. **Le lancement.** Charge l'outil si besoin (`ToolSearch`,
-   `select:mcp__ccd_session__start_session`). Écris une ligne en gras avec le titre, une phrase
-   sur ce que le worker va faire, puis appelle `mcp__ccd_session__start_session` :
-   - `initiation: "user_asked"`, `context: "fresh"` ;
-   - `prompt` : le brief ci-dessous, rempli ; `background` : ce que l'utilisateur veut et
-     pourquoi, et ce qui a déjà été dit ou décidé dans cette conversation ;
-   - `name` : `worker-<sujet court>` ;
-   - `use_worktree: true` si le worker modifie du code ou des fichiers d'un dépôt ;
-     `use_worktree: false` s'il ne fait que lire, chercher ou analyser ;
-   - `wake_when_done: true` ; pas de `permission_mode` (il hérite du tien).
-   Puis dis à l'utilisateur, en une ligne, que le worker est lancé et que tu reviens vers lui
-   avec le résultat. Ne fais rien d'autre sur cette tâche : attends la notification.
-3. **Pendant le travail.** L'utilisateur continue de te parler, à toi :
-   - une précision ou une correction sur la même tâche → `SendMessage` au même worker ;
-   - une nouvelle demande sans lien → un nouveau worker (même méthode) ;
-   - une question du worker → réponds-lui, ou pose-la à l'utilisateur si c'est à lui de choisir
-     (2 options au plus, avec ta recommandation), puis transmets sa réponse.
-4. **La vérification.** Quand le worker a fini, lis son résultat (son rapport, et
-   `mcp__ccd_session_mgmt__get_session` ou `list_events` si le résumé de 400 caractères ne
-   suffit pas). Vérifie-le toi-même contre l'Eval : lis le diff, les fichiers, la PR, la
-   sortie des commandes. Ne crois pas le rapport sur parole.
-   - **Une PR ouverte ou mise à jour par le worker** → rattache-la aussi à ta session, avant
-     tout le reste (voir « Les PR : rattachées au router aussi »).
-   - Tout passe → la tâche est « faite ». S'il reste une tâche prête dans la liste, lance-la
-     tout de suite, de préférence chez un nouveau worker (voir « Petits contextes, puis
-     archivage »), puis reviens à l'étape 4. Sinon, étape 5. Archive chaque worker qui n'a
-     plus rien à faire.
-   - Un point ne passe pas → `SendMessage` au **même** worker : « À CORRIGER — <vérification
-     qui échoue, ce que tu as vu> ». Puis reviens à l'étape 4.
-5. **Le rapport.** Dis à l'utilisateur ce qui est fait, si ça marche (avec la preuve), ce
-   qu'il lui reste à faire, et quels workers tu as archivés. Si quelque chose n'a pas pu être
-   vérifié, dis-le.
+1. **Les tâches.** Découpe la demande en tâches, écrites pour qu'un worker les fasse sans rien
+   demander. **Quoi** : ce qu'il faut livrer, ce qu'il touche, ce qu'il ne touche pas, ce qui
+   est décidé. **Eval** : 1 à 5 lignes « commande ou geste → résultat attendu », cas limites
+   compris, et « Fini quand ». Une information manque et change le travail : applique U2 ; s'il
+   faut vraiment l'utilisateur, **une** question avant de lancer.
+2. **Le lancement.** Au premier lancement, un seul `ToolSearch` groupé pour les outils qui
+   manquent (`select:mcp__ccd_session__start_session,mcp__ccd_session_mgmt__list_sessions,mcp__ccd_session_mgmt__archive_session,mcp__ccd_pr__bind_pr`).
+   Lance le worker, dis-le à l'utilisateur en une ligne, puis attends la notification.
+
+   | | Sous-agent (`Agent`) | Session (`mcp__ccd_session__start_session`) |
+   |---|---|---|
+   | Quand | Par défaut. | Seulement si l'utilisateur l'a demandé avec ses mots : « session », « en sessions », « travail séparé », « en parallèle », « en arrière-plan », ou `/super-agent` suivi de « en sessions ». Alors `initiation: "user_asked"`. Sinon, même pour une PR : sous-agent. |
+   | Brief | `prompt` : le brief WORKER. | `prompt` : le brief WORKER ; `context: "fresh"` ; `background` : ce que l'utilisateur veut, pourquoi, ce qui est déjà décidé. |
+   | Nom | `name`, si l'outil a ce paramètre. | `name` : `<préfixe du router>-<tâche>`, en `[a-z0-9-]`, 24 caractères au plus. |
+   | Isolation | `isolation: "worktree"` s'il modifie un dépôt ; si ta session n'est pas dans un dépôt git, il crée son worktree à la main (`git worktree add`, chemin dans le brief). | `use_worktree: true` s'il modifie un dépôt ; `false` s'il ne fait que lire, ou si la tâche part du travail non commité de l'utilisateur ou livre dans son dossier (un seul worker à la fois) ; `source_branch` pour une branche existante ou une chaîne empilée ; `cwd` pour un autre dépôt. |
+   | Suivi | L'app te notifie à sa fin. | `wake_when_done: true` ; pas de `permission_mode` (elle hérite du tien). |
+   | `model`, `effort` : tâche entièrement écrite ou mécanique | Modèle moins cher (paramètre `model`), `effort` bas. | Idem. |
+   | `model`, `effort` : diagnostic ou conception | Rien : hérite de la session. | Idem. |
+   | `model`, `effort` : vérification et synthèse | Jamais moins que la session. | Idem. |
+3. **Pendant le travail.** Une précision de l'utilisateur sur la même tâche → `SendMessage` au
+   même worker. Une demande sans lien → un nouveau worker. Une question d'un worker → réponds
+   (U2) ; décision humaine → pose-la à l'utilisateur. `CONSIGNE —` → mets à jour Quoi et Eval.
+4. **La vérification.** Le rapport du worker colle chaque commande de l'Eval et sa sortie.
+   Rejoue toi-même 1 à 3 de ces commandes au lieu de tout relire, et regarde l'état réel (diff,
+   fichiers, PR ; session : `get_session`, `list_events`) : ne crois pas le rapport sur parole.
+   - Tout passe → tâche « faite ». Lance aussitôt toute tâche prête ; archive le worker.
+   - Un point ne passe pas → au **même** worker : « À CORRIGER — <ligne d'Eval qui échoue, ce
+     que tu as vu> ». 2 `À CORRIGER` sur le même point → réécris l'Eval ; au 3e, remonte à
+     l'utilisateur. 2 `À CORRIGER` avec un modèle réduit → relance avec le modèle de la session.
+5. **Le rapport.** Dis à l'utilisateur ce qui est fait, la preuve que ça marche, ce qui n'a pas
+   pu être vérifié, ce qu'il lui reste à faire, tes choix par défaut (U2), les workers archivés,
+   et une ligne par tâche : durée, appels d'outils, modèle, nombre de `À CORRIGER`.
 
 ### La liste des tâches
 
-Tu tiens une **liste ordonnée de tâches dans ton contexte**, rien de plus : pas de fichier,
-pas de ticket, pas de Markdown sur le disque.
+- **Une liste ordonnée, dans ton contexte** : pas de fichier, pas de ticket. Chaque tâche a un
+  numéro (`T1`…), un titre, son Quoi, son Eval, ses dépendances, et un état : à faire, en cours
+  (<worker>), à corriger, faite, bloquée (<raison>). Elle est **prête** quand ses dépendances
+  sont faites : lance-la aussitôt, dans l'ordre voulu par l'utilisateur.
+- **Montre la liste** à chaque changement d'état : `mcp__ccd_turn__update_plan` s'il existe,
+  sinon quelques lignes dans ton message. Avec plusieurs PR, montre aussi l'état de chacune.
+- **L'utilisateur la change en te parlant** (« ajoute », « fais T3 d'abord »). « Enlève » ou
+  « remplace » une tâche en cours → `STOP — <raison>` à son worker, puis archive. Retour sur une
+  tâche archivée → `unarchive_session` si c'est une correction ; sinon nouveau worker.
+- **Après une compaction** : reconstruis la liste (`list_sessions`, `get_status`) avant d'agir.
 
-- **Chaque tâche** : un numéro (`T1`, `T2`…), un titre court, son Quoi et son Eval, ce dont
-  elle dépend (« dépend de T1 », ou rien), et un état : à faire, en cours (<worker>),
-  à corriger, faite, bloquée (<raison>).
-- **L'ordre** : d'abord les dépendances (une tâche passe après celles dont elle dépend), puis
-  l'ordre voulu par l'utilisateur.
-- **Une tâche est prête** quand toutes ses dépendances sont faites. Tu la lances **dès qu'elle
-  est prête**, sans attendre la fin d'un groupe de tâches.
-- **Montre la liste à l'utilisateur** : avec la liste de tâches de l'app
-  (`mcp__ccd_turn__update_plan`) quand elle existe, sinon en quelques lignes dans ton message,
-  chaque fois qu'un état change. Avec un tapis roulant, montre aussi l'état de chaque PR.
-- **L'utilisateur la change en te parlant** (« ajoute », « enlève », « fais T3 d'abord ») : tu
-  mets la liste à jour et tu la remontres.
-- **Qui fait quoi** : un worker par flux indépendant (voir « Router et workers »).
+### Les PR
 
-### Les PR : rattachées au router aussi
+- **Un seul message du worker** : `PRÊT À MERGER — <URL>` (CI verte, Eval ok). Tu rattaches la
+  PR à ta session **une fois**, à la vérification (`mcp__ccd_pr__bind_pr`, URL complète). Le
+  suivi de la CI (`set_monitor`, Auto-fix) reste au worker.
+- **Merge** : jamais sans l'accord de l'utilisateur, donné dans le chat (une PR : « PR prête —
+  <URL>, je merge ? » ; plusieurs : « L'annonce »). Il a dit « auto quand c'est vert » →
+  `mcp__ccd_pr__set_auto_merge` sur la PR rattachée. Sinon → `MERGE — <URL>` au worker qui
+  possède la PR ; il merge et répond `MERGÉ`.
+- **Plusieurs PR sur la même base** : une file, une merge à la fois ; `REBASE` seulement sur
+  conflit ou refus de GitHub (`references/flux.md` §1).
 
-L'app rattache une PR à la session qui l'a ouverte, donc au worker. L'utilisateur, lui, parle
-au router : **chaque PR doit aussi être rattachée à ta session**, pour qu'il la voie depuis la
-demande de départ.
+### Brief du worker
 
-- **Quand** : dès qu'un worker (ou un merger, un reproducer…) annonce une PR, avant de vérifier
-  le reste. Même si le résultat est « À CORRIGER » : la PR existe déjà.
-- **Comment** : charge l'outil si besoin (`ToolSearch`, `select:mcp__ccd_pr__bind_pr`), puis
-  appelle `mcp__ccd_pr__bind_pr` avec l'URL complète de la PR
-  (`https://github.com/<owner>/<repo>/pull/<n>`). Prends l'URL dans le rapport du worker ; si
-  elle manque, lis-la avec `mcp__ccd_pr__get_status` (`session_id` du worker) ou demande-la-lui.
-- **Contrôle** : `mcp__ccd_pr__get_status` sans argument doit ensuite montrer cette PR. Sinon,
-  dis-le à l'utilisateur en une ligne, avec le lien de la PR.
-- **Plusieurs PR** : rattache chacune, dans l'ordre où elles arrivent. Si l'app n'en garde
-  qu'une par session, garde la plus récente rattachée et donne les liens des autres dans ton
-  rapport.
-- **Ne touche pas** au suivi de la CI depuis le router (`set_monitor`, Auto-fix) : il reste au
-  worker, qui a ouvert la PR et sait la corriger.
-
-**Brief du worker** (le `prompt`). Si chaque worker a sa PR sur la même base, ajoute aux
-Règles le bloc tapis roulant de `references/flux.md` §4. Les deux règles « Décide seul… » sont
-une copie de la règle de blocage (« Flux autonome ») : modifie-les ensemble.
-
-```
-WORKER <name>
-Tu es un worker. Le router est la session « <titre de cette session> » : c'est lui qui parle à
-l'utilisateur. Fais le travail toi-même : ne lance pas d'autre session ni de worker.
-
-## Quoi
-<ce qu'il faut livrer>
-- Touche : <…>
-- Ne touche pas : <…>
-- Décidé : <…>
-- Communication (dès 2 workers) : <qui écrit à qui et pour quoi ; ex. tout passe par le router,
-  tapis roulant pour les PR>
-
-## Eval
-- [ ] <vérification 1>
-- [ ] <vérification 2>
-Fini quand : <une phrase>
-
-Règles :
-- Suis les instructions du dépôt (CLAUDE.md, AGENTS.md, skills du dépôt) et celles de
-  l'utilisateur.
-- S'il te manque une information qui change le travail, ou si un choix revient à
-  l'utilisateur : écris au router avec SendMessage, première ligne "QUESTION — <résumé>",
-  et attends sa réponse. Ne devine pas.
-- Avant de finir, rejoue toi-même chaque vérification de l'Eval et note le résultat.
-- Fin : un rapport court. Ses 400 premiers caractères disent si c'est fait, si chaque
-  vérification passe, et où est le résultat (chemin, branche, PR).
-- Tu ouvres ou mets à jour une PR : dès qu'elle existe, écris au router avec SendMessage,
-  première ligne "PR — <URL complète de la PR>", puis continue. Remets aussi l'URL complète
-  dans ton rapport de fin.
-- PR prête (CI verte, Eval ok) → écris au router "PRÊT À MERGER — <URL>". Ne merge jamais sans
-  "MERGE —" du router.
-- Décide seul de tout ce qui ne demande pas d'humain (rebase, conflit trivial, CI instable à
-  relancer, lint, choix technique réversible) et note-le dans ton rapport. Ne remonte que les
-  décisions humaines (merge ou push dans la branche principale, prod, action irréversible ou
-  sortante, choix métier, dépense, accès manquant).
-- Quelque chose t'a fait perdre du temps (permission, CI lente, brief flou, conflit) : écris au
-  router "FRICTION — <quoi, temps perdu, idée>", puis continue.
-```
+Le `prompt` de tout worker, sous-agent ou session : le gabarit de `references/brief.md`, lu une
+fois au premier lancement, rempli à chaque tâche. Tout brief commence par `WORKER <nom>` et dit
+« n'invoque pas le skill super-agent ». Il porte la demande de l'utilisateur mot pour mot, le
+Quoi, l'Eval, U1 et U2 telles quelles, une durée attendue, et la forme du rapport de fin.
 
 ## Passer à une équipe (swarm)
 
-Passe à une équipe (voir « Seuils ») seulement si la tâche le justifie vraiment :
-
-- elle se découpe en **morceaux indépendants** (des fichiers, des sources ou des sous-questions
-  différents) qui gagnent à tourner en parallèle **et** demandent une organisation (contrats,
-  intégration, vérification croisée) ; de simples tâches indépendantes sont des flux, un
-  worker chacun, sans équipe ;
-- ou elle demande de la **redondance** : plusieurs angles d'audit, plusieurs hypothèses de
-  diagnostic, une recherche large à vérifier ;
-- ou l'utilisateur le demande (« swarme », « en équipe », `/super-agent` avec un gros sujet).
-
-Alors suis les étapes 0 à 7 ci-dessous. Principe directeur : **l'organisation est un
-livrable**. Tu ne laisses pas les agents s'organiser seuls ; tu conçois la topologie, tu l'écris
-dans un plan, tu la fais valider, puis tu l'exécutes. L'équipe peut tourner comme sessions liées
-(mode sessions), comme sous-agents de cette session (mode sous-agents) ou, si l'utilisateur le
-demande, avec l'outil `Workflow` (mode rapide).
-
-Références (lis celle dont tu as besoin, au moment où tu en as besoin) :
-
-- `references/flux.md` — tapis roulant, travail en chaîne, pertes de temps (toutes formes).
-- `references/exemples.md` — exemples de sujets macro et de la forme choisie.
-- `references/topologies.md` — les quatre patrons, leurs règles de redondance et de vérification.
-- `references/schemas.md` — les schémas JSON communs (FINDING, VERDICT, CHANGESET…).
-- `references/sessions-mode.md` — **mode par défaut dans Claude Desktop** : chaque agent est une
-  session native liée, que l'utilisateur ouvre et à qui il parle ; les sessions se parlent par
-  messages entre sessions.
-- `references/team-mode.md` — mode sous-agents : les agents tournent dans cette session, se
-  parlent par `SendMessage`, et le panneau du mod swarm-view les montre. Plus léger.
-- `references/workflow-templates.md` — mode rapide, sur demande : un squelette Workflow par patron.
-
-En mode rapide seulement, charge le skill `workflow-authoring` avant d'écrire le moindre script.
-
-## Étape 0 — Choisir le mode et vérifier ses prérequis (toujours, en premier)
-
-**Mode sessions** (par défaut) : il faut l'outil `mcp__ccd_session__start_session` (Claude
-Desktop). S'il n'apparaît que comme outil différé, charge-le avec `ToolSearch`
-(`select:mcp__ccd_session__start_session,mcp__ccd_window__open_session_in`). S'il est là, dis
-« Mode sessions disponible » et passe à l'étape 1 ; la suite de cette étape ne s'applique pas.
-S'il n'existe pas (terminal, autre hôte), dis-le et passe au mode sous-agents.
-
-**Mode sous-agents** (si l'utilisateur le demande, ou sans outils de sessions) : il a besoin des
-*agent teams* (agents nommés). Fais les vérifications de `references/team-mode.md`
-(« Vérification avant de lancer ») et suis leur verdict. Le **mode rapide** (`Workflow`), s'il
-est demandé, n'en a pas besoin : saute cette étape.
-
-## Étape 1 — Cadrage (toi seul, sans agent)
-
-Reformule en 6 lignes maximum :
-
-1. **Le problème**, avec son périmètre (fichiers, dépôts, sources, période…).
-2. **Le critère de fin** : à quoi reconnaît-on que c'est terminé et juste ?
-3. **Les contraintes** : ce qu'il ne faut pas toucher, les accès disponibles, les délais.
-4. **Le goal** (toujours) : une phrase qui dit à quoi sert le travail, 2 à 3 exemples de sujets
-   qui le remplissent (pris dans la demande de l'utilisateur quand il en donne), et ce qui n'en
-   est pas un. Le goal filtre tout le reste : il va en tête de `plan.md` et de chaque brief.
-
-Fais un **repérage inline** si le découpage en dépend (lister les fichiers, les sous-systèmes,
-lire le diff, chercher les sources principales). On n'a pas besoin de tout savoir avant de
-commencer, mais il faut connaître la liste des éléments à répartir avant d'orchestrer.
-
-S'il manque une information qui change le découpage, pose **une** question précise. Sinon, avance.
-
-## Étape 2 — Classification et test de pertinence
-
-Classe le problème dans **une** famille (ou une combinaison séquentielle, ex. diagnostic puis code) :
-
-| Famille | Signal |
-|---|---|
-| Recherche / analyse | Question large, sources multiples, besoin de synthèse sourcée |
-| Audit / revue | Un objet fixe (code, PR, modèle de données) à examiner sous plusieurs angles |
-| Diagnostic / debug | Un symptôme, une cause inconnue, plusieurs hypothèses plausibles |
-| Implémentation de code | Construire ou modifier du code en plusieurs morceaux |
-
-Puis dis si le goal est **ouvert** ou **fermé** :
-
-- **ouvert** : le livrable est une collection qui peut grandir (doc de questions, FAQ, cas de
-  test, points d'audit). Ajoute le patron `topologies.md` §5 : des apporteurs de sujets cherchent
-  d'autres sujets du même type que les exemples, pour nourrir le goal ;
-- **fermé** : une seule réponse attendue (un bug, une décision). Pas d'apporteurs, sauf si une
-  liste de sujets à trouver (hypothèses, angles) aide vraiment.
-
-Puis **teste la pertinence**. Renonce à l’équipe et reste sur des workers par flux si :
-
-- le problème tient en une poignée d'appels d'outils ;
-- les sous-tâches ne sont pas séparables (chaque étape dépend de la précédente, ou, pour le
-  code, plusieurs morceaux doivent modifier les mêmes fichiers) ;
-- le gain attendu ne justifie pas un coût de 5 à 15× une session.
-
-Dis-le franchement en une ligne : des workers par flux suffisent, une équipe serait coûteuse et
-inutile.
-
-## Étape 3 — Conception du plan
-
-Ouvre `references/topologies.md` à la section de la famille retenue et construis le plan :
-
-- **Tâches** : unités autonomes, chacune avec un livrable clair. Pour le code, la liste des
-  fichiers possédés par chaque tâche (un fichier n'appartient qu'à une seule tâche). Chaque
-  tâche s’écrit pour qu’un worker la fasse sans rien demander :
-  - **Quoi** : ce qu'elle livre, en 1 ou 2 phrases, et ce qu'elle ne doit pas toucher ;
-  - **Eval** : 1 à 5 vérifications concrètes, cas limites compris, et « Fini quand ».
-  C'est contre cet Eval que tu acceptes ou renvoies le résultat.
-- **Rôles** : les workers, le watchdog (voir « Seuils ») et les rôles spécialisés utiles
-  (`topologies.md` §6).
-- **Modèle par rôle** : l'effort de la session pour toi, les workers et les vérificateurs
-  difficiles. Un modèle moins cher (`model` de `start_session`, ex. Sonnet) pour un worker dont
-  la tâche est entièrement écrite. Le modèle le moins cher, en effort `low`, pour le watchdog.
-- **Dépendances** : quelles tâches attendent quelles autres. La hiérarchie se fait par vagues
-  successives, jamais par des agents qui en créent d'autres (pas d'imbrication).
-- **Redondance** : pour chaque tâche, 1 ou K copies. Toute copie supplémentaire a un **angle
-  différent** (consigne, objectif, méthode de recherche, modèle). Jamais K copies identiques :
-  leurs erreurs seraient corrélées.
-- **Vérification** : qui vérifie quoi, et comment (sources, reproduction, tests, réfutation).
-- **Apporteurs de sujets** (goal ouvert) : 1 à 2, chacun avec un angle différent, et un
-  **budget de sujets** (nombre maximum de sujets acceptés) : le nombre d'agents ne borne pas le
-  nombre de sujets. Voir `topologies.md` §5.
-- **Rédacteurs** : dès que le livrable est du texte (doc, CR, rapport) et qu'il y a 3 exécutants
-  ou plus, prévois 1 rédacteur pour 2 à 3 exécutants. Les exécutants ne rédigent pas : ils
-  rendent de la matière brute (schéma `MATIERE`), les rédacteurs en font le texte. Ainsi les
-  exécutants restent sur le fond, et le livrable a un seul style.
-- **Synthèse** : un agent dédié (avec des rédacteurs : le rédacteur en chef `redac-1`), et la
-  règle de fusion (voir étape 6).
-- **Livrable** : un seul format, fixé maintenant (rapport markdown, branche + diff, tableau de
-  comparaison, réponse dans le chat). Choisis celui qui sert le mieux le critère de fin.
-- **Effort par étape** : `effort: 'low'` pour les étapes mécaniques, l'effort de la session pour
-  le reste, plus haut seulement pour les juges et vérificateurs difficiles.
-
-Compte les agents : **tous** les agents prévus (sessions, sous-agents ou appels `agent()`) — apporteurs, workers, copies redondantes,
-vérificateurs, rédacteurs, watchdog, merger, checker, tester, reproducer, synthèse. Toi, le
-router, tu ne comptes pas. Quand un nombre dépend des résultats (ex. un vérificateur
-par constat), donne une fourchette et prends sa borne haute pour le seuil.
-
-## Étape 4 — Validation du plan (obligatoire)
-
-Présente le plan à l'utilisateur dans ce format, puis attends son feu vert :
-
-```
-Goal : <une phrase> — exemples : <2 à 3 sujets> — pas un sujet : <…>
-Famille : <famille> — patron : <patron> (+ §5 goal ouvert, si ouvert)
-Mode : sessions (sessions natives liées) | sous-agents (dans cette session) | rapide (Workflow)
-Communication : <qui écrit à qui, et pour quoi>
-Rôles : router (moi) — <n> workers — <watchdog, merger, checker, tester, reproducer : ceux retenus> | aucun rôle spécialisé — <raison>
-Livrable : <format>
-Vagues :
-  1. <nom> — <n> agents — <ce qu'ils font> (redondance : <règle>)
-  2. ...
-Vérification : <n> agents — <méthode>
-Apporteurs de sujets : <n> agents — <angle de chacun> | aucun — <raison>
-Budget de sujets : <N> sujets au plus (arrêt aussi si 2 fois « rien de nouveau », ou sur ton stop)
-Rédacteurs : <n> agents — <format d'une fiche / du CR> | aucun — <raison>
-Synthèse : 1 agent
-Total : <N> agents (borne haute) — coût estimé ≈ <N×1 à N×1,5>× une session normale
-Hors périmètre : <ce qui ne sera pas couvert>
-```
-
-Règle du seuil (voir « Seuils ») :
-
-- **Total ≤ 10** : demande un simple feu vert (« Je lance ? »).
-- **Total > 10** : demande l'autorisation avec `AskUserQuestion`, en nommant **le nombre exact
-  d'agents**, ce que les agents au-delà de 10 apportent, et une **variante allégée** à 10 agents
-  maximum en option. Ne lance pas plus d'agents que le nombre approuvé. Si en cours de route il en
-  faut davantage, arrête-toi et redemande.
-
-Si l'utilisateur modifie le plan, recalcule le total et réapplique la règle.
-
-## Étape 5 — Exécution
-
-**Choix du mode.** Par défaut, **mode sessions** : suis `references/sessions-mode.md`. En mode
-sous-agents, suis `references/team-mode.md`. N'utilise le mode rapide que si l'utilisateur le
-demande ; ses agents ne se parlent pas pendant le travail, et un goal ouvert y devient trois
-phases fermées (`topologies.md` §5).
-
-Le reste de cette étape décrit le **mode rapide** :
-
-1. Pars du squelette correspondant dans `references/workflow-templates.md` et adapte-le au plan
-   validé. Les sorties de chaque agent passent par les schémas de `references/schemas.md` :
-   c'est le **contrat de communication** entre agents.
-2. **Un workflow par vague** quand une vague dépend du contenu de la précédente pour être conçue
-   (ex. diagnostic : enquête → tu lis → réfutation croisée). Lis les résultats entre deux
-   workflows et ajuste la vague suivante, dans la limite du nombre d'agents approuvé.
-   Un seul workflow suffit quand le plan est entièrement déterminé à l'avance.
-3. Utilise `pipeline()` par défaut. Une barrière `parallel()` seulement quand une étape a besoin
-   de **tous** les résultats précédents (dédoublonnage, synthèse, réfutation croisée).
-4. Les gros artefacts (logs, diffs volumineux, extraits) vont dans le dossier de travail du swarm,
-   **hors du dépôt** : le répertoire scratchpad de la session (sous-dossier `swarm-<slug>/`).
-   Les agents isolés en worktree ne voient pas un dossier créé dans le checkout principal.
-   Les scripts ne peuvent pas appeler `Date.now()` : passe l'identifiant du run et les chemins via
-   `args`.
-5. Si un agent revient `null` (échec ou abandon), n'improvise pas son résultat : signale le trou
-   dans la synthèse, ou relance ce seul agent si le budget approuvé le permet.
-
-## Étape 6 — Vérification et réunification
-
-Règle de fusion appliquée par l'agent de synthèse (et que tu contrôles ensuite) :
-
-- **Accord** entre sources ou copies indépendantes : constat retenu, confiance haute.
-- **Désaccord** : les deux positions sont exposées avec leurs preuves. Ne tranche jamais en
-  silence ; tranche seulement si une preuve (test, reproduction, source primaire) départage.
-- **Constat isolé** non vérifié : retenu mais marqué « non confirmé ».
-- **Constat réfuté** par la vérification : écarté, mentionné en annexe.
-- **Trous** : ce qui n'a pas été couvert (agent échoué, source inaccessible, échantillonnage)
-  est listé explicitement. Pas de troncature silencieuse.
-
-Avec des rédacteurs, les sorties brutes sont les fichiers `matiere/<id>.json` : relis quelques
-fiches contre leur matière.
-
-Avant de livrer, relis la synthèse toi-même contre les sorties brutes : la synthèse est le maillon
-où l'information se perd le plus.
-
-## Étape 7 — Livraison
-
-Livre dans le format fixé à l'étape 3, avec en tête :
-
-- la réponse au critère de fin (oui / non / partiellement, et pourquoi) ;
-- les constats principaux avec leur niveau de confiance ;
-- les désaccords non résolus et les trous ;
-- avec un goal ouvert : le nombre de sujets proposés, acceptés, traités, et la raison de
-  l'arrêt (budget, plus rien de nouveau, stop de l'utilisateur) ;
-- le coût réel (nombre d'agents lancés) et, pour l'examen a posteriori, le dossier d'échange
-  (`~/.claude/swarm-runs/<slug>/`) ou, en mode rapide, le `journal.jsonl` du workflow.
-
-Pour le code : la branche d'intégration, le résultat des tests (commandes et sortie), et la liste
-des branches de travail restantes. Ne merge pas dans la branche principale et ne pousse rien sans
-accord explicite.
+Une équipe seulement si un de ces critères est rempli : (1) des **morceaux indépendants** qui
+demandent une organisation (contrats, intégration, vérification croisée) — de simples tâches
+indépendantes sont des flux, un worker chacun ; (2) de la **redondance** (plusieurs angles
+d'audit ou hypothèses de diagnostic, une recherche large à vérifier) ; (3) l'utilisateur la
+demande (« swarme », « en équipe », `/super-agent` avec un gros sujet). Critère rempli → lis
+`references/equipe.md` (étapes 0 à 7, et les autres références). Pas avant.

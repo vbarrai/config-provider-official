@@ -1,5 +1,7 @@
 # Squelettes de scripts Workflow
 
+Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et applique `SKILL.md` seul.
+
 Un squelette par patron de `topologies.md`. Ce sont des points de départ : remplace les `<…>`,
 ajuste le nombre d'agents au plan **validé**, et colle les schémas de `schemas.md` en tête.
 
@@ -10,6 +12,9 @@ Rappels de l'API (détail dans le skill `workflow-authoring`) :
 - `agent()` rend `null` en cas d'échec : filtre avec `.filter(Boolean)` et **compte** les trous.
 - `pipeline()` par défaut ; `parallel()` seulement quand une étape a besoin de tous les résultats.
 - `log()` tout ce qui est écarté ou tronqué.
+- Chaque prompt d'`agent()` commence par la ligne `WORKER <id>`, comme tout brief du skill, et
+  dit de ne pas invoquer le skill super-agent. Enveloppe les prompts des squelettes avec :
+  ``const worker = (id, p) => `WORKER ${id}\nTu es un worker : ne lance aucun agent et n'invoque pas le skill super-agent.\n${p}`;``
 
 Le premier argument `args` de chaque template contient le plan validé (tâches, angles,
 hypothèses…), pour que le script ne réinvente rien.

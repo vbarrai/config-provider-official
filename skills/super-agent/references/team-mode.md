@@ -1,17 +1,18 @@
 # Mode sous-agents — les agents tournent dans cette session et se parlent
 
-À utiliser quand l'utilisateur le demande, ou quand les outils de sessions manquent (le mode par
-défaut dans Claude Desktop est `sessions-mode.md`). Plus léger et plus rapide que les sessions,
-mais l'utilisateur ne peut pas ouvrir un agent comme une session. Tous les agents sont des
-**sous-agents de cette session**, et ils **communiquent entre eux pendant le travail**, sans
-attendre la fin d'une vague.
+Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et applique `SKILL.md` seul.
+
+**Mode par défaut d'une équipe** (`equipe.md`, étape 0). Le mode sessions (`sessions-mode.md`)
+ne sert que si l'utilisateur demande des sessions avec ses mots. Plus léger et plus rapide que
+les sessions. Tous les agents sont des **sous-agents de cette session**, et ils **communiquent
+entre eux pendant le travail**, sans attendre la fin d'une vague.
 
 Pour que l'utilisateur voie l'équipe, le mod **swarm-view** dessine un panneau « Swarm » : chaque
-agent, son état, sa dernière action (clics du navigateur compris), et les messages entre agents. Un clic sur un agent montre son historique, une case pour lui écrire et un
-bouton vers son transcript. Le panneau s'ouvre tout seul au
-premier agent lancé ; sinon l'utilisateur tape `/swarm-view`. Si le mod n'est pas installé,
-dis-le une fois au début : les agents tourneront sans vue d'ensemble, visibles seulement dans la
-liste des tâches de la session.
+agent, son état, sa dernière action (clics du navigateur compris), et les messages entre agents.
+Le panneau s'ouvre tout seul au premier agent lancé ; sinon l'utilisateur tape `/swarm-view`. Si
+le mod n'est pas installé, dis-le une fois au début : les agents tourneront sans vue d'ensemble,
+visibles seulement dans la liste des tâches de la session. Dans tous les cas, l'utilisateur ne
+parle qu'à toi (U1) : ne l'invite pas à écrire à un agent.
 
 Le mode rapide (outil `Workflow`) ne s'utilise que si l'utilisateur le demande : ses agents ne
 peuvent pas se parler en cours de route.
@@ -26,8 +27,9 @@ Un agent n'est joignable par les autres que s'il a un **nom**. Le paramètre `na
 ```
 
 (dans `~/.claude/settings.json`). Vérifie au début : si l'outil `Agent` n'a pas de paramètre
-`name`, dis-le à l'utilisateur et propose de l'activer. Ne modifie pas ce réglage sans son oui.
-S'il refuse, passe au **mode dégradé** (fin de ce fichier).
+`name`, dis-le à l'utilisateur et propose de l'activer. Dis-lui aussi que ce réglage vaut pour
+**toutes ses sessions**, pas seulement pour celle-ci. Ne le modifie pas sans son oui. S'il
+refuse, passe au **mode dégradé** (fin de ce fichier).
 
 Ce que le nom donne, selon où tourne la session :
 
@@ -47,7 +49,7 @@ Limites à connaître :
 - les agents en cours ne survivent pas à un `/resume` de la session ; une mise en veille de
   l'ordinateur peut couper un agent : relance-le avec `SendMessage` (il garde son contexte).
 
-### Vérification avant de lancer (étape 0 de SKILL.md)
+### Vérification avant de lancer (étape 0 de `equipe.md`)
 
 Sans *agent teams*, les agents n'ont pas de nom et ne peuvent pas s'écrire. Fais ces deux
 vérifications :
@@ -85,7 +87,7 @@ Ensuite :
 `~/.claude/swarm-runs/<slug>/` (crée-le avant de lancer ; `<slug>` = sujet court + date du jour,
 ex. `bug-login-2026-10-27`). Il contient :
 
-- `plan.md` — le plan validé (goal en tête), que chaque agent lit au démarrage ;
+- `plan.md` — le plan montré à l'utilisateur (goal en tête), que chaque agent lit au démarrage ;
 - goal ouvert : `sujets.md` (écrit par toi seul), `matiere/<id>.json`, `livrable/<id>.md` ;
 - `<nom>.json` — le résultat final de chaque agent, au schéma prévu dans `schemas.md` ;
 - les captures et gros extraits.
@@ -99,6 +101,7 @@ Ce dossier est hors de tout dépôt : les agents isolés en worktree y ont accè
    dépendances. Sinon, la liste des tâches vit dans `plan.md`.
 3. Lance chaque agent avec l'outil `Agent`, **dans le même message** pour qu'ils partent ensemble :
    - `name` : court et stable (`hyp-cache`, `revue-secu`, `impl-api`) ;
+   - `model` et `effort` : la table de SKILL.md (« Le cycle d'une tâche », étape 2) ;
    - `subagent_type: "general-purpose"` (il lui faut tous les outils, navigateur et
      `SendMessage` compris) ;
    - `isolation: "worktree"` seulement pour un agent qui modifie du code ;
@@ -107,8 +110,13 @@ Ce dossier est hors de tout dépôt : les agents isolés en worktree y ont accè
 
 ## Brief d'équipe (à inclure dans chaque prompt)
 
+La première ligne est `WORKER <nom>`, comme pour tout worker (`brief.md`). U1 et U2 sont des
+copies de SKILL.md : modifie-les ensemble (`brief.md` liste les copies).
+
 ```
-Tu es <nom>, membre d'une équipe de <N> agents sur : <problème>.
+WORKER <nom>
+Tu es <nom>, membre d'une équipe de <N> agents sur : <problème>. Tu es un worker : ne lance
+aucun agent ni session, et n'invoque pas le skill super-agent.
 Critère de fin : <critère>.
 Goal : <goal> — exemples : <…> — pas un sujet : <…>.
 Ta mission : <mission> — périmètre : <fichiers / sources / hypothèse>.
@@ -125,6 +133,16 @@ Communication — tu DOIS écrire aux autres avec SendMessage quand, et seulemen
 Première ligne du message : "TYPE — résumé en une phrase". Puis les détails et les preuves.
 Pas de messages de politesse, pas d'accusé de réception, pas de diffusion à tous sans raison.
 SendMessage est le SEUL canal entre agents : ne passe pas par des fichiers pour te coordonner.
+Le router est "main".
+
+U1. L'utilisateur ne parle qu'au router. Un worker ne finit jamais son tour sur une
+question ou une invite : question, blocage ou permission manquante → `SendMessage` au router.
+S'il reçoit quand même une consigne de l'utilisateur, il l'applique et écrit
+`CONSIGNE — <ce qui change>` au router.
+U2. Avant toute remontée, cherche la réponse : la conversation et les briefs ; puis le
+dépôt (CLAUDE.md, code voisin) ; sinon, si le choix est réversible, prends l'option la plus
+cohérente et note « décidé par défaut : X, parce que Y ». Un arbitrage technique ne remonte que
+s'il est coûteux à défaire. Ce que l'utilisateur a demandé en toutes lettres est déjà accordé.
 
 Quand un message t'arrive : traite-le avant de continuer. S'il te réfute, vérifie la preuve ;
 corrige ta conclusion ou réponds avec une contre-preuve.
@@ -165,8 +183,8 @@ Le plan fixe **qui parle à qui**. Écris-le dans `plan.md` et dans chaque brief
 | Audit | Chaque relecteur envoie ses constats graves au contre-expert dès qu'il les trouve. Le contre-expert répond à l'auteur par une RÉFUTATION ou une confirmation. |
 | Diagnostic | Débat permanent : chaque enquêteur envoie ses preuves CONTRE les hypothèses des autres à leurs enquêteurs. Une hypothèse reste debout tant que personne ne l'a réfutée avec une preuve. |
 | Goal ouvert (§5) | Apporteurs → coordinateur (SUJETS). Coordinateur → exécutants (SUJET). Exécutant → son rédacteur (MATIÈRE) et → coordinateur (LIBRE). Rédacteur → exécutant (QUESTION) et → coordinateur (RÉDIGÉ). Coordinateur → tous (STOP). |
-| Code | L'agent « contrats » répond aux QUESTIONS d'interface. Un implémenteur qui a BESOIN d'un fichier qui ne lui appartient pas écrit à son propriétaire. L'intégrateur (merger) signale les conflits aux auteurs concernés. Worker → tester (À TESTER) → worker (VÉRIFIÉ / À CORRIGER). Router → merger (À INTÉGRER) → router (INTÉGRÉ) → checker (À VÉRIFIER) → router (VÉRIFIÉ). Tout le monde → reproducer (BUG) → router (CORRIGÉ). Une PR par worker → tapis roulant (`flux.md`). Toute session → router (FRICTION : ce qui l'a ralentie). |
-| Rôles spécialisés (`topologies.md` §6) | Watchdog → router seulement (ALERTE). Les briefs de chaque rôle sont dans `sessions-mode.md`. Le watchdog (voir « Seuils » dans SKILL.md) lit `~/.claude/swarm-runs/<slug>/view/` : en mode sous-agents, si ce dossier n'existe pas pour tes agents, ne le prévois pas. |
+| Code | L'agent « contrats » répond aux QUESTIONS d'interface. Un implémenteur qui a BESOIN d'un fichier qui ne lui appartient pas écrit à son propriétaire. L'intégrateur (merger) signale les conflits aux auteurs concernés. Worker → tester (À TESTER) → worker (VÉRIFIÉ / À CORRIGER). Router → merger (À INTÉGRER) → router (INTÉGRÉ) → checker (À VÉRIFIER) → router (VÉRIFIÉ). Tout le monde → reproducer (BUG) → router (CORRIGÉ). Une PR par worker → file de merge (`flux.md` §1) : worker → router (PRÊT À MERGER). |
+| Rôles spécialisés (`topologies.md` §6) | Un rôle se prend sur un besoin écrit dans le plan ; les briefs sont dans `sessions-mode.md`. Pas de watchdog en mode sous-agents (règle unique : « Seuils », SKILL.md). |
 
 ## Pendant le travail
 
@@ -176,15 +194,17 @@ Le plan fixe **qui parle à qui**. Écris-le dans `plan.md` et dans chaque brief
   l'utilisateur de décider, pose-lui la question.
 - Si deux agents tournent en rond (plus de 3 allers-retours sur le même point), arbitre : demande
   la preuve décisive, ou consigne le désaccord pour la synthèse.
-- Si l'utilisateur écrit directement à un agent, son instruction prime.
+- Si l'utilisateur écrit quand même à un agent (U1), l'agent applique sa consigne et t'envoie
+  `CONSIGNE —` : mets à jour le plan et l'Eval de sa tâche.
 
 ## Après le travail
 
 1. Lis tous les `<nom>.json`. Un agent sans fichier, ou en `ÉCHEC`, est un trou.
 2. Une suite logique pour un agent existant : envoie-lui un `SendMessage`, il reprend avec tout
    son contexte. Un nouveau rôle : nouvel agent, compté dans le total approuvé.
-3. Synthèse par toi, selon la règle de fusion de SKILL.md (étape 6). Les champs `echanges`
-   servent à expliquer comment les désaccords ont été tranchés.
+3. Synthèse : par l'agent prévu au plan, ou par toi pour un livrable de moins d'une page
+   (`equipe.md`, étapes 3 et 6, avec la règle de fusion). Les champs `echanges` servent à
+   expliquer comment les désaccords ont été tranchés.
 4. Demande aux agents de s'arrêter quand tout est livré.
 
 ## Code en mode sous-agents
