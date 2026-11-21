@@ -7,8 +7,8 @@ flux indépendant, ou une équipe ; voir « Router et workers » dans `SKILL.md`
 communication, la raison du choix et ce qui remonterait à l'humain. Les seuils (échelle de
 taille, plafond de workers, surveillance, feu vert, accord) sont ceux de « Seuils » dans
 `SKILL.md`. Par défaut, un worker est un sous-agent ; c'est une session seulement si
-l'utilisateur en demande avec ses mots (« en sessions », « en parallèle »…). Toute merge dans
-la branche principale demande l'accord de l'utilisateur.
+l'utilisateur en demande avec ses mots (`SKILL.md`, « Le cycle d'une tâche », étape 2, ligne
+« Quand »). Toute merge dans la branche principale demande l'accord de l'utilisateur.
 
 ---
 

@@ -37,7 +37,7 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 | 2 workers ou plus | Une stratégie de communication, 2-3 lignes dans chaque brief. Par défaut : tout passe par le router ; un worker qui doit toucher le fichier d'un autre écrit au router, qui arbitre. |
 | Workers actifs en même temps, hors équipe | **4 au plus** par router ; l'utilisateur change ce chiffre en une phrase. Les tâches en plus attendent dans la liste et partent dès qu'un worker se libère. |
 | Surveillance | **Pas de watchdog** : ni pour des workers par flux, ni en mode sous-agents, ni en mode rapide. À chaque réveil et à chaque tour de l'utilisateur, regarde l'état de tes workers (sessions : `list_sessions` avec `linked: true` ; sous-agents : l'app te notifie à leur fin). Une session watchdog seulement pour un run de plus de 30 minutes sans l'utilisateur (brief : `references/sessions-mode.md`, « Watchdog »). |
-| Une équipe (redondance, rôles spécialisés, vagues) | Le plan montré à l'utilisateur. Il a demandé l'équipe dans ce message et le total est ≤ 10 agents → montre le plan et lance dans le même tour. Tu la proposes toi-même → attends son feu vert. |
+| Une équipe (redondance, rôles spécialisés, vagues) | Le plan montré à l'utilisateur. Il a demandé l'équipe dans ce message et elle reste sous le seuil d'accord (ligne suivante) → montre le plan et lance dans le même tour. Tu la proposes toi-même → attends son feu vert. |
 | Plus de 10 agents actifs en même temps (le router ne compte pas) | L'accord de l'utilisateur, toujours : c'est une dépense. |
 
 ## Router et workers — deux métiers séparés
