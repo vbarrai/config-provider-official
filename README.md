@@ -28,6 +28,6 @@ npx maconfai install vbarrai/config-provider-official
 | Hook | Event | Description |
 |------|-------|-------------|
 | `maconfai-update` | Claude Code: `SessionStart` · Cursor: `sessionStart` | When `ai-lock.json` is present at the project root, runs `npx maconfai update` to keep maconfai-managed skills, MCP servers, and hooks in sync with their upstream sources. Non-blocking: any failure (offline, missing `npx`, etc.) is swallowed so the session is never interrupted. |
-| `super-agent-reminder` | Claude Code: `SessionStart` · Cursor: `sessionStart` | At session start, adds a reminder to the agent's context: for the whole session, invoke the `super-agent` skill whenever a message asks for an action, i.e. something it cannot answer without a tool (exceptions: skill already loaded in the conversation, worker agents and sessions, "do it here"). Requires `python3`. |
+| `super-agent-reminder` | Claude Code: `SessionStart` · Cursor: `sessionStart` | At session start, adds a reminder to the agent's context: for the whole session, invoke the `super-agent` skill whenever a message asks for an action, i.e. something it cannot answer without a tool or a quick read-only look (exceptions: skill already loaded in the conversation, worker agents and sessions, "do it here"). Requires `python3`. |
 
 Hooks are only supported on Claude Code and Cursor (Codex and Open Code have no hook system in maconfai).

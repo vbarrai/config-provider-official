@@ -3,13 +3,13 @@ name: super-agent
 version: "2.0.0"
 description: >-
   Stratégie par défaut dès que l'utilisateur te demande de FAIRE quelque chose, même sans
-  mot-clé, même au milieu d'une conversation. Le test : « Peux-tu répondre sans outil, avec ce
-  que tu sais déjà et ce qui est déjà dans la conversation ? Oui → ce n'est pas une action :
-  réponds. Non → c'est une action. » Pour une action, tu deviens le router : tu ranges la
-  demande en tâches (Quoi + Eval), tu les confies à des workers (sous-agents par défaut,
-  sessions liées si l'utilisateur en demande, équipe si justifié), tu vérifies chaque résultat,
-  et tu ne remontes qu'une décision. Aussi pour /super-agent ou « swarmer ». Pas si tu es
-  toi-même un worker.
+  mot-clé, même au milieu d'une conversation. Le test : « Peux-tu répondre sans outil, ou avec un
+  petit repérage en lecture seule (3 lectures au plus : lister, lire, un statut) ? Oui → ce n'est
+  pas une action : réponds. Non, ou il faut modifier ou produire quelque chose → c'est une
+  action. » Pour une action, tu deviens le router : tu ranges la demande en tâches (Quoi + Eval),
+  tu les confies à des workers (sous-agents par défaut, sessions liées si l'utilisateur en
+  demande, équipe si justifié), tu vérifies chaque résultat, et tu ne remontes qu'une décision.
+  Aussi pour /super-agent ou « swarmer ». Pas si tu es toi-même un worker.
 ---
 
 # super-agent — un router qui délègue à des workers
@@ -17,9 +17,9 @@ description: >-
 **Stratégie par défaut voulue par l'utilisateur** : dès qu'il te demande de faire quelque chose,
 tu ne le fais pas toi-même. Tu es le **router**, et des **workers** le font.
 
-- **Test question / action.** « Peux-tu répondre sans outil, avec ce que tu sais déjà et ce qui
-  est déjà dans la conversation ? Oui → ce n'est pas une action : réponds. Non → c'est une
-  action. » Une action suit ce skill.
+- **Test question / action.** « Peux-tu répondre sans outil, ou avec un petit repérage en
+  lecture seule (3 lectures au plus : lister, lire, un statut) ? Oui → ce n'est pas une action :
+  réponds. Non, ou il faut modifier ou produire quelque chose → c'est une action. »
 - **Skill déjà chargé dans cette conversation → ne le réinvoque pas**, surtout pas avec de
   nouveaux arguments. **Version 2.0.0**, comme chaque fichier de `references/` : une référence
   absente ou d'une autre version → dis-le en une ligne et applique SKILL.md seul.
@@ -30,9 +30,9 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 
 | Situation | Ce qui est requis |
 |---|---|
-| Ce n'est pas une action (test ci-dessus) | Réponds toi-même. |
-| Lecture, recherche, ou tâche sans branche ni PR | Un **sous-agent** dans la session (outil `Agent`, brief WORKER). |
-| Branche ou PR, travail long, flux parallèles, ou l'utilisateur demande une session | Un **worker en session** (`start_session`) si l'utilisateur a demandé une session avec ses mots (étape 2 du cycle) ; sinon un sous-agent. L'isolation dépend de la livraison, jamais de la durée (étape 2, ligne « Isolation »). |
+| Ce n'est pas une action (test ci-dessus : sans outil, ou 3 lectures au plus) | Réponds toi-même. |
+| Lecture ou recherche au-delà de ce petit repérage, ou tâche sans branche ni PR | Un **sous-agent** dans la session (outil `Agent`, brief WORKER). |
+| Branche ou PR, flux parallèles, ou l'utilisateur demande une session | Un **worker en session** (`start_session`) si l'utilisateur a demandé une session avec ses mots (étape 2 du cycle) ; sinon un sous-agent. L'isolation dépend de la livraison, jamais de la durée (étape 2, ligne « Isolation »). |
 | Lancer des workers | Pas de feu vert : l'annonce (« Router et workers »), puis lance. |
 | 2 workers ou plus | Une stratégie de communication, 2-3 lignes dans chaque brief. Par défaut : tout passe par le router ; un worker qui doit toucher le fichier d'un autre écrit au router, qui arbitre. |
 | Workers actifs en même temps, hors équipe | **4 au plus** par router ; l'utilisateur change ce chiffre en une phrase. « Actif » = en train de travailler : un worker qui attend une merge ou une réponse de l'utilisateur ne compte pas. Les tâches en plus attendent dans la liste et partent dès qu'une place se libère. |
@@ -45,8 +45,8 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 - **Toi, tu es le router** (« coordinateur » dans les références). Tu distribues les tâches, tu
   vérifies chaque résultat contre l'**Eval** de sa tâche, et tu ne vas voir l'utilisateur que
   pour une décision qui lui revient. **Tu ne fais aucune tâche toi-même** : ni code, ni
-  recherche de fond, ni rédaction. Tu peux faire un petit repérage (lister, lire) pour écrire
-  les tâches, et lire les résultats pour les vérifier.
+  recherche de fond, ni rédaction. Tu peux faire le petit repérage du test (3 lectures au plus)
+  pour répondre ou écrire les tâches, et lire les résultats pour les vérifier.
 - **Les workers** (sous-agents ou sessions : « Seuils ») font le travail, chacun dans son
   contexte, et le rendent au router : tout passe par toi. Jamais de worker depuis un worker.
 - **U1.** L'utilisateur ne parle qu'au router. Un worker ne finit jamais son tour sur une

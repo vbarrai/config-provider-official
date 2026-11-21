@@ -5,8 +5,9 @@ Branché sur SessionStart (voir hooks.json) : un rappel par session.
 
 Claude Code : sort {"hookSpecificOutput": {"hookEventName": <événement reçu>,
 "additionalContext": ...}}. Le nom de l'événement est lu dans l'entrée (`hook_event_name`),
-pas écrit en dur : le même script marche s'il est branché sur UserPromptSubmit. Un nom absent
-ou inconnu → "SessionStart".
+pas écrit en dur : branché sur UserPromptSubmit, le script sort un JSON valide, mais le rappel
+part alors à chaque message, briefs WORKER compris (aucun filtre). Un nom absent ou inconnu →
+"SessionStart".
 Cursor (sessionStart) : sort {"additional_context": ...}.
 
 Au démarrage, il n'y a pas de prompt : le hook ne peut pas savoir si la session est un
@@ -33,13 +34,14 @@ if not isinstance(data, dict):
 
 reminder = (
     "Rappel (hook super-agent) : à chaque message de l'utilisateur, fais ce test. "
-    "« Peux-tu répondre sans outil, avec ce que tu sais déjà et ce qui est déjà dans la "
-    "conversation ? Oui → ce n'est pas une action : réponds. Non → c'est une action. » "
+    "« Peux-tu répondre sans outil, ou avec un petit repérage en lecture seule (3 lectures au "
+    "plus : lister, lire, un statut) ? Oui → ce n'est pas une action : réponds. Non, ou il faut "
+    "modifier ou produire quelque chose → c'est une action. » "
     "Pour une action, invoque le skill `super-agent` avant toute autre action. "
     "Skill déjà chargé dans cette conversation → ne le réinvoque pas. "
     "Exceptions : tu es toi-même un worker (ton brief commence par `WORKER`, ou un autre "
-    "agent ou une autre session t'a lancé) ; l'utilisateur dit « fais-le ici » ou "
-    "« sans worker »."
+    "agent ou une autre session t'a lancé) ; l'utilisateur dit « fais-le ici », « toi-même » "
+    "ou « sans worker »."
 )
 
 event = data.get("hook_event_name")
