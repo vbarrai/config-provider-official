@@ -53,11 +53,14 @@ prends la session intitulée « <titre de cette session> » ».
 
 1. Marque un chapitre (`mcp__ccd_session__mark_chapter`) au nom de la vague, puis, pour chaque
    session, une ligne en gras avec son titre et une phrase sur ce qu'elle va faire.
-2. Appelle `mcp__ccd_session__start_session` pour chaque agent, **dans le même message** :
+2. Appelle `mcp__ccd_session__start_session` pour la première session, seule. Elle part → les
+   autres, **dans le même message**. Elle est refusée → n'essaie pas les autres : toute la
+   vague part en sous-agents (repli de SKILL.md, « Quand tu ne délègues pas »). Paramètres :
    - `initiation: "user_asked"` — vrai seulement parce que l'utilisateur a demandé des sessions
      avec ses mots (voir le début de ce fichier) ;
-   - `context: "fresh"`, avec `prompt` (le « Brief de session » ci-dessous, rempli) et
-     `background` (le problème global, le critère de fin, le rôle de chaque autre session) ;
+   - `title` : moins de 60 caractères ; `context: "fresh"`, avec `prompt` (le « Brief de
+     session » ci-dessous, rempli) et `background` (80 caractères au moins : le problème
+     global, le critère de fin, le rôle de chaque autre session) ;
    - `name` : `<préfixe du router>-<rôle>`, court et stable (`aud-secu`, `bug-cache`), en
      `[a-z0-9-]`, 24 caractères au plus ; c'est par ce nom que les autres l'adressent et que
      son fichier JSON s'appelle. Le préfixe évite deux sessions du même nom quand plusieurs
@@ -208,10 +211,11 @@ Messages en plus (première ligne "TYPE — résumé") : `ALERTE` (watchdog → 
 (router, checker ou tester → worker), `BUG` (n'importe qui → reproducer), `CORRIGÉ`
 (reproducer → router), `CONSIGNE` (worker → router : l'utilisateur lui a écrit, voir U1),
 `STOP` (router → tous ; ou router → un worker dont la tâche est enlevée).
-File de merge (déroulé : `flux.md` §1) : `PRÊT À MERGER` (worker → router, PR verte, avec
-l'URL complète : c'est le seul message sur une PR), `MERGE` (router → worker propriétaire),
-`MERGÉ` (worker → router, avec le sha), `REBASE` (router → un worker, sur conflit ou si GitHub
-refuse la merge), `REBASÉ` (worker → router, avec le résultat des tests).
+PR (déroulé : `flux.md` §1) : `PRÊT À MERGER` (première ligne du rapport de fin d'une session,
+PR verte, avec l'URL complète), `PR OUVERTE` (première ligne du rapport de fin d'un sous-agent,
+CI non attendue), `MERGE` (router → worker propriétaire), `MERGÉ` (worker → router), `REBASE`
+(router → un worker, sur conflit ou si GitHub refuse la merge), `REBASÉ` (worker → router, avec
+le résultat des tests), `ÉTAT ?` (router → un sous-agent sans nouvelle).
 Une `FRICTION` (ce qui a ralenti une session, le temps perdu, une idée) va dans le rapport de
 fin, pas dans un message, sauf si elle bloque. Cette liste est la source unique des types de
 messages.
@@ -219,9 +223,10 @@ Toi, le router, tu lances ces rôles dans la même vague que les workers, et seu
 le plan écrit le besoin (`topologies.md` §6). Ils attendent leur premier message (le watchdog,
 lui, commence tout de suite).
 
-**Watchdog** — quand le lancer : seulement dans le cas écrit dans « Seuils » (SKILL.md). Alors
-lance-le en premier, avec le modèle le moins cher (paramètre `model`) et `effort: "low"`. Il
-n'archive rien : c'est toi qui archives.
+**Watchdog** — quand le lancer : seulement dans le cas écrit dans « Seuils » (SKILL.md), donc
+en mode sessions et dans un tour de l'utilisateur. Alors lance-le en premier, avec le modèle le
+moins cher (paramètre `model`) et `effort: "low"`. Il ne voit que des sessions, pas des
+sous-agents. Il n'archive rien : c'est toi qui archives.
 
 ```
 Ton rôle : watchdog. Tu surveilles les signes de vie des autres sessions, pas leur travail.
@@ -345,14 +350,14 @@ famille » dans `team-mode.md`, valable ici aussi). Écris-la dans `plan.md` et 
 
 1. Vérifie avec `mcp__ccd_session_mgmt__list_sessions` (`linked: true`) que chaque session est au
    repos, puis lis chaque `<nom>.json`. Une session sans fichier, ou en `ÉCHEC`, est un trou :
-   signale-le, ou relance-la par un message si le budget approuvé le permet.
+   signale-le, ou relance-la par un message si le total du plan le permet.
 2. Vague suivante : une session dont le contexte sert vraiment la suite reçoit un
    `SendMessage` avec ce dont elle a besoin, et écrit `<nom>-v2.json` ; sinon, un nouvel agent
    (sous-agent, ou session si l'exception de SKILL.md, « Tour de réveil », s'applique), dans le
-   total approuvé.
-3. Synthèse : par l'agent prévu au plan, ou par toi pour un livrable de moins d'une page
-   (`equipe.md`, étapes 3 et 6, avec la règle de fusion). Les champs `echanges` expliquent
-   comment les désaccords ont été tranchés.
+   total du plan.
+3. Synthèse : par l'agent prévu au plan, jamais par toi (`equipe.md`, étape 3 ; règle de
+   fusion : `equipe.md`, étape 6). Les champs `echanges` expliquent comment les désaccords ont
+   été tranchés.
 4. À la fin, après le `STOP` : archive toi-même les sessions de travail, puis le watchdog s'il y
    en a un (règle et cas de refus : SKILL.md, « Router et workers »). Dis en une ligne
    lesquelles ont été archivées. En cours de run, chaque session qui n'a plus rien à faire est
@@ -370,5 +375,6 @@ Mêmes règles que `topologies.md` §4 :
   pas dans la branche principale ; le **checker** passe ensuite sur la branche d'intégration ;
 - ne merge jamais toi-même ces branches dans ce checkout sans que l'utilisateur te le demande.
 - toute PR ouverte par une session de l'équipe (avec l'accord de l'utilisateur) suit « Les PR »
-  de SKILL.md : un seul message `PRÊT À MERGER`, rattachement une fois, merge sur accord ;
+  de SKILL.md : un rapport qui commence par `PRÊT À MERGER`, rattachement une fois, merge sur
+  accord ;
 - une PR par session sur la même branche de base → file de merge (`flux.md` §1).

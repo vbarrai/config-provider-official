@@ -111,9 +111,8 @@ Ouvre `references/topologies.md` à la section de la famille retenue et construi
   unique (doc, CR, rapport) et qu'il y a 3 exécutants ou plus : 1 rédacteur pour 2 à 3
   exécutants. Alors les exécutants ne rédigent pas : ils rendent de la matière brute (schéma
   `MATIERE`), les rédacteurs en font le texte. Sinon, chaque exécutant rédige sa part.
-- **Synthèse** : un agent dédié (avec des rédacteurs : le rédacteur en chef `redac-1`), et la
-  règle de fusion (étape 6). Exception : un livrable de moins d'une page, que tu écris
-  toi-même ; le plan dit alors « Synthèse : router ».
+- **Synthèse** : toujours un agent, jamais toi (avec des rédacteurs : le rédacteur en chef
+  `redac-1`), et la règle de fusion (étape 6). Pour un livrable court, un sous-agent suffit.
 - **Livrable** : un seul format, fixé maintenant (rapport markdown, branche + diff, tableau de
   comparaison, réponse dans le chat). Choisis celui qui sert le mieux le critère de fin.
 - **Effort par étape** : `effort: 'low'` pour les étapes mécaniques, l'effort de la session pour
@@ -121,7 +120,8 @@ Ouvre `references/topologies.md` à la section de la famille retenue et construi
 
 Compte les agents : **tous** les agents prévus (sessions, sous-agents ou appels `agent()`) — apporteurs, workers, copies redondantes,
 vérificateurs, rédacteurs, watchdog, merger, checker, tester, reproducer, synthèse. Toi, le
-router, tu ne comptes pas. Le seuil de « Seuils » compte les agents actifs en même temps.
+router, tu ne comptes pas. Ce total, toutes vagues cumulées, est le nombre que compare le seuil
+d'accord de « Seuils ».
 Quand un nombre dépend des résultats (ex. un vérificateur par constat), donne une fourchette et
 prends sa borne haute pour le seuil.
 
@@ -143,14 +143,14 @@ Vérification : <n> agents — <méthode>
 Apporteurs de sujets : <n> agents — <angle de chacun> | aucun — <raison>
 Budget de sujets : <N> sujets au plus (arrêt aussi si 2 fois « rien de nouveau », ou sur ton stop)
 Rédacteurs : <n> agents — <format d'une fiche / du CR> | aucun — <raison>
-Synthèse : 1 agent | router (livrable de moins d'une page)
+Synthèse : 1 agent
 Total : <N> agents (borne haute) — coût estimé ≈ <N×1 à N×1,5>× une session normale
 Hors périmètre : <ce qui ne sera pas couvert>
 ```
 
 Lancer ou attendre : applique « Seuils » (SKILL.md), sans le réécrire.
 
-- **L'utilisateur a demandé l'équipe dans ce message, et le total reste sous le seuil
+- **L'utilisateur a demandé l'équipe dans ce message, et le Total du plan reste sous le seuil
   d'accord** : montre le plan et lance dans le même tour. Sa demande vaut feu vert ; il peut
   dire stop.
 - **Tu proposes l'équipe toi-même** : attends son feu vert (« Je lance ? »).
@@ -174,7 +174,7 @@ Le reste de cette étape décrit le **mode rapide** :
    c'est le **contrat de communication** entre agents.
 2. **Un workflow par vague** quand une vague dépend du contenu de la précédente pour être conçue
    (ex. diagnostic : enquête → tu lis → réfutation croisée). Lis les résultats entre deux
-   workflows et ajuste la vague suivante, dans la limite du nombre d'agents approuvé.
+   workflows et ajuste la vague suivante, dans la limite du total du plan.
    Un seul workflow suffit quand le plan est entièrement déterminé à l'avance.
 3. Utilise `pipeline()` par défaut. Une barrière `parallel()` seulement quand une étape a besoin
    de **tous** les résultats précédents (dédoublonnage, synthèse, réfutation croisée).
@@ -184,7 +184,7 @@ Le reste de cette étape décrit le **mode rapide** :
    Les scripts ne peuvent pas appeler `Date.now()` : passe l'identifiant du run et les chemins via
    `args`.
 5. Si un agent revient `null` (échec ou abandon), n'improvise pas son résultat : signale le trou
-   dans la synthèse, ou relance ce seul agent si le budget approuvé le permet.
+   dans la synthèse, ou relance ce seul agent si le total du plan le permet.
 
 ## Étape 6 — Vérification et réunification
 
@@ -202,8 +202,7 @@ Avec des rédacteurs, les sorties brutes sont les fichiers `matiere/<id>.json` :
 fiches contre leur matière.
 
 Avant de livrer, relis la synthèse toi-même contre les sorties brutes : la synthèse est le maillon
-où l'information se perd le plus. Si tu as écrit la synthèse toi-même (livrable de moins d'une
-page), la règle de fusion s'applique à toi.
+où l'information se perd le plus. Tu la contrôles ; tu ne l'écris pas.
 
 ## Étape 7 — Livraison
 

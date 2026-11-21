@@ -32,7 +32,7 @@ Ordres de grandeur indiqués pour un problème moyen ; adapte au découpage rée
 deux agents avec des angles différents (ex. sources académiques vs retours terrain ; recherche
 par entité vs recherche par période). Option « critique de complétude » : un agent final qui
 cherche ce qui manque (source non lue, angle non exploré) ; ce qu'il trouve devient une vague
-supplémentaire si le budget approuvé le permet.
+supplémentaire si le total du plan le permet.
 
 **Vérification** : une affirmation est confirmée si sa source primaire la soutient vraiment.
 Écarte les affirmations dont la seule source est une reprise d'une autre.
@@ -111,7 +111,8 @@ disjoints.
    définit les interfaces entre morceaux (signatures, types, formats d'échange), découpe en
    tâches et attribue à chaque tâche une liste de fichiers **disjointe**. Rend un `CONTRACT_PLAN`.
    S'il détecte un fichier partagé incontournable ou un couplage fort, il le signale
-   (`separable: false`) et **le swarm s'arrête** : propose une session unique.
+   (`separable: false`) et **le swarm s'arrête** : envoie `STOP` aux rôles déjà lancés, et
+   propose un seul worker (sous-agent) qui enchaîne les tâches.
    Montre ce découpage à l'utilisateur et continue sans attendre, sauf `separable: false` ou si
    le lancement attend encore son feu vert (`equipe.md`, étape 4).
 2. **Implémentation** (1 worker par tâche, `isolation: 'worktree'`) : chaque worker ne modifie que
@@ -127,7 +128,8 @@ disjoints.
 4. **Vérification** (le **checker**, §6, et 1 relecteur si le diff est gros) : le checker teste
    les fonctionnalités mergées pour de vrai, contre l'Eval de chaque tâche ; le relecteur relit
    le diff d'intégration contre les contrats (patron 2 réduit).
-5. **Synthèse** : c'est toi qui rapportes, pas un agent (branche, tests, revue, restes).
+5. **Rapport** : pas de texte à synthétiser ici ; tu rapportes l'état (branche, tests, revue,
+   restes).
 
 Un **reproducer** (§6) peut tourner pendant tout le run : quand une partie de l'app casse, il
 reproduit le bug et propose un correctif.

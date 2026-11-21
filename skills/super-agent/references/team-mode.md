@@ -183,7 +183,7 @@ Le plan fixe **qui parle à qui**. Écris-le dans `plan.md` et dans chaque brief
 | Audit | Chaque relecteur envoie ses constats graves au contre-expert dès qu'il les trouve. Le contre-expert répond à l'auteur par une RÉFUTATION ou une confirmation. |
 | Diagnostic | Débat permanent : chaque enquêteur envoie ses preuves CONTRE les hypothèses des autres à leurs enquêteurs. Une hypothèse reste debout tant que personne ne l'a réfutée avec une preuve. |
 | Goal ouvert (§5) | Apporteurs → coordinateur (SUJETS). Coordinateur → exécutants (SUJET). Exécutant → son rédacteur (MATIÈRE) et → coordinateur (LIBRE). Rédacteur → exécutant (QUESTION) et → coordinateur (RÉDIGÉ). Coordinateur → tous (STOP). |
-| Code | L'agent « contrats » répond aux QUESTIONS d'interface. Un implémenteur qui a BESOIN d'un fichier qui ne lui appartient pas écrit à son propriétaire. L'intégrateur (merger) signale les conflits aux auteurs concernés. Worker → tester (À TESTER) → worker (VÉRIFIÉ / À CORRIGER). Router → merger (À INTÉGRER) → router (INTÉGRÉ) → checker (À VÉRIFIER) → router (VÉRIFIÉ). Tout le monde → reproducer (BUG) → router (CORRIGÉ). Une PR par worker → file de merge (`flux.md` §1) : worker → router (PRÊT À MERGER). |
+| Code | L'agent « contrats » répond aux QUESTIONS d'interface. Un implémenteur qui a BESOIN d'un fichier qui ne lui appartient pas écrit à son propriétaire. L'intégrateur (merger) signale les conflits aux auteurs concernés. Worker → tester (À TESTER) → worker (VÉRIFIÉ / À CORRIGER). Router → merger (À INTÉGRER) → router (INTÉGRÉ) → checker (À VÉRIFIER) → router (VÉRIFIÉ). Tout le monde → reproducer (BUG) → router (CORRIGÉ). Une PR par worker → `flux.md` §1 : le rapport de fin du worker commence par PR OUVERTE (sous-agent). |
 | Rôles spécialisés (`topologies.md` §6) | Un rôle se prend sur un besoin écrit dans le plan ; les briefs sont dans `sessions-mode.md`. Pas de watchdog en mode sous-agents (règle unique : « Seuils », SKILL.md). |
 
 ## Pendant le travail
@@ -201,16 +201,16 @@ Le plan fixe **qui parle à qui**. Écris-le dans `plan.md` et dans chaque brief
 
 1. Lis tous les `<nom>.json`. Un agent sans fichier, ou en `ÉCHEC`, est un trou.
 2. Une suite logique pour un agent existant : envoie-lui un `SendMessage`, il reprend avec tout
-   son contexte. Un nouveau rôle : nouvel agent, compté dans le total approuvé.
-3. Synthèse : par l'agent prévu au plan, ou par toi pour un livrable de moins d'une page
-   (`equipe.md`, étapes 3 et 6, avec la règle de fusion). Les champs `echanges` servent à
-   expliquer comment les désaccords ont été tranchés.
+   son contexte. Un nouveau rôle : nouvel agent, compté dans le total du plan.
+3. Synthèse : par l'agent prévu au plan, jamais par toi (`equipe.md`, étape 3 ; règle de
+   fusion : `equipe.md`, étape 6). Les champs `echanges` servent à expliquer comment les
+   désaccords ont été tranchés.
 4. Demande aux agents de s'arrêter quand tout est livré.
 
 ## Code en mode sous-agents
 
 Mêmes règles que `topologies.md` §4 : implémenteurs et intégrateur en `isolation: "worktree"`,
-chaque implémenteur committe sur sa branche `swarm/<tâche>` et la note dans son `CHANGESET` ;
+chaque implémenteur committe sur sa branche `swarm-<slug>-<tâche>` et la note dans son `CHANGESET` ;
 l'intégrateur merge, lance les tests, ne pousse rien. Attention : avec `isolation`, l'agent est un
 sous-agent ordinaire et non un coéquipier ; il garde `SendMessage` vers les agents nommés de sa
 liste d'équipe, mais vérifie au premier lancement qu'il reçoit bien les messages.

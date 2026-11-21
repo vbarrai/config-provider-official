@@ -10,7 +10,11 @@ tâche ; ne retire aucune règle.
   (SKILL.md, « Quand tu ne délègues pas »).
 - U1 et U2 sont des copies de SKILL.md (« Router et workers », « Flux autonome ») : modifie-les
   ensemble, ici et dans les briefs d'équipe (`sessions-mode.md`, `team-mode.md`).
-- Plusieurs PR sur la même base : ajoute aux Règles le bloc de `flux.md` §4.
+- Ligne « Livraison » : dis où le résultat doit arriver. Sans branche ni PR, le worker écrit
+  dans le dossier de l'utilisateur (SKILL.md, « Le cycle d'une tâche », étape 2, « Isolation »).
+- Règle « PR » : garde une seule des deux variantes, selon que le worker est une session ou un
+  sous-agent. Sans PR, retire la règle.
+- Plusieurs PR sur la même base : ajoute aux Règles le bloc de `flux.md` §4 (rebase).
 - « Durée attendue » : ton estimation. Un worker qui la double t'écrit ; décide alors de le
   laisser finir, de préciser la tâche, ou de l'arrêter (`STOP`).
 
@@ -26,6 +30,7 @@ Demande de l'utilisateur, mot pour mot : « <…> »
 - Touche : <…>
 - Ne touche pas : <…>
 - Décidé : <…>
+- Livraison : <dans le dossier de l'utilisateur | branche <nom> | PR>
 - Communication (dès 2 workers) : <qui écrit à qui et pour quoi>
 
 ## Eval
@@ -44,13 +49,19 @@ Règles :
   s'il est coûteux à défaire. Ce que l'utilisateur a demandé en toutes lettres est déjà accordé.
 - Seules les décisions humaines remontent ("QUESTION — <résumé>" au router, puis attends) :
   merge ou push dans la branche principale, prod, action irréversible ou sortante, choix
-  métier, dépense, accès manquant. Décide seul du reste, et note-le dans ton rapport.
+  métier, dépense, accès manquant. Un blocage : "BLOQUÉ — <quoi>" au router. Décide seul du
+  reste (rebase, conflit trivial, CI instable relancée une fois, lint, choix technique
+  réversible) et note-le dans ton rapport.
 - Durée attendue : <n> min ; au double, écris au router.
-- Avant de finir, rejoue chaque ligne de l'Eval. Fin : un rapport court. Ses 400 premiers
-  caractères : fait ou non, chaque ligne passe ou non, où est le résultat (chemin, branche, PR).
-  Puis : la commande et sa sortie pour chaque ligne d'Eval, tes choix par défaut, et ce qui t'a
-  fait perdre du temps ("FRICTION : <quoi, temps perdu, idée>").
-- PR prête (CI verte, Eval ok) : un seul message au router, "PRÊT À MERGER — <URL complète>".
-  Ne merge jamais sans "MERGE —" du router.
+- Avant de finir, rejoue chaque ligne de l'Eval. Fin : un seul message, ton rapport court. Ses
+  400 premiers caractères : fait ou non, chaque ligne passe ou non, où est le résultat (chemin,
+  branche, PR). Puis : la commande et sa sortie pour chaque ligne d'Eval, tes choix par défaut,
+  et ce qui t'a fait perdre du temps ("FRICTION : <quoi, temps perdu, idée>").
+- PR : la première ligne de ton rapport est <session : "PRÊT À MERGER — <URL complète>", une
+  fois la CI verte | sous-agent : "PR OUVERTE — <URL complète>", sans attendre la CI>. Aucun
+  autre message sur la PR. Ne merge jamais sans "MERGE — <URL>" du router ; sur ce message,
+  merge avec la méthode du dépôt (`gh pr merge <URL>`, règles du dépôt), puis réponds
+  "MERGÉ — <URL>".
+- Sur "ÉTAT ?" du router : réponds en une ligne (où tu en es, ce qui te bloque).
 - Sur "STOP — <raison>" du router : arrête-toi, et dis où en sont ta branche et ta PR.
 ```

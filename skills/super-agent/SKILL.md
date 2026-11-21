@@ -35,10 +35,10 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 | Branche ou PR, travail long, flux parallèles, ou l'utilisateur demande une session | Un **worker en session** (`start_session`) si l'utilisateur a demandé une session avec ses mots (étape 2 du cycle) ; sinon un sous-agent en worktree. |
 | Lancer des workers | Pas de feu vert : l'annonce (« Router et workers »), puis lance. |
 | 2 workers ou plus | Une stratégie de communication, 2-3 lignes dans chaque brief. Par défaut : tout passe par le router ; un worker qui doit toucher le fichier d'un autre écrit au router, qui arbitre. |
-| Workers actifs en même temps, hors équipe | **4 au plus** par router ; l'utilisateur change ce chiffre en une phrase. Les tâches en plus attendent dans la liste et partent dès qu'un worker se libère. |
-| Surveillance | **Pas de watchdog** : ni pour des workers par flux, ni en mode sous-agents, ni en mode rapide. À chaque réveil et à chaque tour de l'utilisateur, regarde l'état de tes workers (sessions : `list_sessions` avec `linked: true` ; sous-agents : l'app te notifie à leur fin). Une session watchdog seulement pour un run de plus de 30 minutes sans l'utilisateur (brief : `references/sessions-mode.md`, « Watchdog »). |
-| Une équipe (redondance, rôles spécialisés, vagues) | Le plan montré à l'utilisateur. Il a demandé l'équipe dans ce message et elle reste sous le seuil d'accord (ligne suivante) → montre le plan et lance dans le même tour. Tu la proposes toi-même → attends son feu vert. |
-| Plus de 10 agents actifs en même temps (le router ne compte pas) | L'accord de l'utilisateur, toujours : c'est une dépense. |
+| Workers actifs en même temps, hors équipe | **4 au plus** par router ; l'utilisateur change ce chiffre en une phrase. « Actif » = en train de travailler : un worker qui attend une merge, une réponse de l'utilisateur ou un `GO` ne compte pas. Les tâches en plus attendent dans la liste et partent dès qu'une place se libère. |
+| Surveillance | **Pas de watchdog** par défaut, et jamais pour des sous-agents. À chaque réveil et à chaque tour de l'utilisateur, regarde l'état de tes workers, sans boucle d'attente. Sessions : `list_sessions` avec `linked: true`. Sous-agent qui a dépassé le double de sa durée attendue sans message : un seul `SendMessage` « ÉTAT ? », et une ligne à l'utilisateur. Une session watchdog seulement en mode sessions, quand l'utilisateur dit qu'il s'absente ou la demande (brief : `references/sessions-mode.md`, « Watchdog »). |
+| Une équipe (redondance, rôles spécialisés, vagues) | Le plan montré à l'utilisateur. Il a demandé l'équipe dans ce message et le total du plan reste sous le seuil d'accord (ligne suivante) → montre le plan et lance dans le même tour. Tu la proposes toi-même → attends son feu vert. |
+| Plus de 10 agents lancés au total pour une même demande (cumul de tous les workers, équipe ou non ; le router ne compte pas) | L'accord de l'utilisateur, toujours : c'est une dépense. Demande-le avant de lancer le 11e, avec le total prévu. |
 
 ## Router et workers — deux métiers séparés
 
@@ -64,12 +64,16 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
   dont le résultat n'existe que dans son worktree, ni un worker dont une tâche dépendante peut
   avoir besoin. Archivage refusé (session ouverte à l'écran, épinglée, accord demandé) :
   n'insiste pas, cite-la « à archiver » dans ton rapport. Réversible : `unarchive_session`.
+  Un sous-agent n'a rien à archiver : supprime son worktree une fois le résultat livré ou mergé.
 
-**L'annonce avant de lancer** (3 lignes ; la 4e dès que 2 PR ou plus sont prévues). Lance sans
-attendre la réponse ; sans réponse, une seule remontée groupée (« PR 1, 2, 3 prêtes, je merge ? »).
+**L'annonce avant de lancer.** Un seul worker : une ligne (« Je lance 1 sous-agent pour
+<tâche> ; dis "en sessions" pour une session. »). 2 workers ou plus : le gabarit ci-dessous ; la
+ligne Merge seulement dès 2 PR prévues ; en sessions ou en équipe, la ligne Forme le dit. Lance
+sans attendre de réponse. « En sessions » arrive après : les workers partis finissent, les
+suivants partent en sessions. Pas de réponse sur la merge : une seule remontée groupée.
 
 ```
-Forme : <n flux → n workers> en <sous-agents ; dis « en sessions » pour des sessions | sessions | équipe>
+Forme : <n> flux → <n> sous-agents (dis « en sessions » pour des sessions)
 Communication : <qui écrit à qui, quels messages>
 Pourquoi : <la raison du choix>
 Merge : je te demande à chaque PR, ou auto quand c'est vert ?
@@ -104,8 +108,9 @@ Fais-le toi-même seulement dans ces cas :
   session t'a lancé. Fais le travail ; ne lance aucun worker.
 - **Ce n'est pas une action** (test en tête), ou **l'utilisateur le dit** : « fais-le ici »,
   « toi-même », « sans worker ».
-- **Repli.** `start_session` absent ou refusé : un seul essai, puis sous-agent (outil `Agent`,
-  même brief WORKER), dis-le en une ligne ; si `Agent` manque aussi, fais-le toi-même.
+- **Repli.** `start_session` absent ou refusé : un seul essai. Lance la première session seule ;
+  refusée → n'essaie pas les autres : tous les workers de ce lancement partent en sous-agents
+  (`Agent`, même brief), dis-le en une ligne. `Agent` absent ou refusé aussi → fais-le toi-même.
 
 **Tour de réveil** (lancé par une notification ou par un autre agent, pas par l'utilisateur) :
 la tâche suivante part aussitôt chez un sous-agent, ou chez un worker existant par
@@ -116,21 +121,21 @@ l'utilisateur, pour une étape qu'il a demandé de mettre dans sa propre session
 ## Le cycle d'une tâche (router ↔ worker)
 
 1. **Les tâches.** Découpe la demande en tâches, écrites pour qu'un worker les fasse sans rien
-   demander. **Quoi** : ce qu'il faut livrer, ce qu'il touche, ce qu'il ne touche pas, ce qui
-   est décidé. **Eval** : 1 à 5 lignes « commande ou geste → résultat attendu », cas limites
+   demander. **Quoi** : ce qu'il faut livrer et où (dossier de l'utilisateur, branche ou PR), ce
+   qu'il touche, ce qu'il ne touche pas, ce qui est décidé. **Eval** : 1 à 5 lignes « commande ou geste → résultat attendu », cas limites
    compris, et « Fini quand ». Une information manque et change le travail : applique U2 ; s'il
    faut vraiment l'utilisateur, **une** question avant de lancer.
-2. **Le lancement.** Au premier lancement, un seul `ToolSearch` groupé pour les outils qui
-   manquent (`select:mcp__ccd_session__start_session,mcp__ccd_session_mgmt__list_sessions,mcp__ccd_session_mgmt__archive_session,mcp__ccd_pr__bind_pr`).
+2. **Le lancement.** Au premier lancement, un seul `ToolSearch` groupé pour les outils différés
+   (`select:SendMessage,mcp__ccd_pr__bind_pr,mcp__ccd_pr__get_status,mcp__ccd_pr__set_auto_merge` si une PR est prévue ; en sessions, ajoute `mcp__ccd_session__start_session,mcp__ccd_session_mgmt__list_sessions,mcp__ccd_session_mgmt__get_session,mcp__ccd_session_mgmt__archive_session,mcp__ccd_session_mgmt__unarchive_session`).
    Lance le worker, dis-le à l'utilisateur en une ligne, puis attends la notification.
 
    | | Sous-agent (`Agent`) | Session (`mcp__ccd_session__start_session`) |
    |---|---|---|
    | Quand | Par défaut. | Seulement si l'utilisateur l'a demandé avec ses mots : « session », « en sessions », « travail séparé », « en parallèle », « en arrière-plan », ou `/super-agent` suivi de « en sessions ». Alors `initiation: "user_asked"`. Sinon, même pour une PR : sous-agent. |
-   | Brief | `prompt` : le brief WORKER. | `prompt` : le brief WORKER ; `context: "fresh"` ; `background` : ce que l'utilisateur veut, pourquoi, ce qui est déjà décidé. |
-   | Nom | `name`, si l'outil a ce paramètre. | `name` : `<préfixe du router>-<tâche>`, en `[a-z0-9-]`, 24 caractères au plus. |
-   | Isolation | `isolation: "worktree"` s'il modifie un dépôt ; si ta session n'est pas dans un dépôt git, il crée son worktree à la main (`git worktree add`, chemin dans le brief). | `use_worktree: true` s'il modifie un dépôt ; `false` s'il ne fait que lire, ou si la tâche part du travail non commité de l'utilisateur ou livre dans son dossier (un seul worker à la fois) ; `source_branch` pour une branche existante ou une chaîne empilée ; `cwd` pour un autre dépôt. |
-   | Suivi | L'app te notifie à sa fin. | `wake_when_done: true` ; pas de `permission_mode` (elle hérite du tien). |
+   | Brief | `prompt` : le brief WORKER. | `prompt` : le brief WORKER ; `title` : moins de 60 caractères ; `context: "fresh"` ; `background` (80 caractères au moins) : ce que l'utilisateur veut, pourquoi, ce qui est déjà décidé. |
+   | Nom | `name`, si l'outil a ce paramètre : `<préfixe>-<tâche>`. Le préfixe : 3 à 6 lettres tirées du sujet du router, les mêmes pour tous ses workers. | `name` : même règle, en `[a-z0-9-]`, 24 caractères au plus. |
+   | Isolation | **Sans `isolation`** si la tâche est courte, sans branche ni PR, et livre dans le dossier de l'utilisateur ou part de son travail non commité (un seul écrivain à la fois dans ce dossier). `isolation: "worktree"` seulement si elle finit en branche ou PR, ou si un autre worker écrit en même temps. Autre dépôt, branche existante, ou session hors d'un dépôt git : pas d'`isolation` ; le brief donne le chemin du dépôt et la branche, et il crée son worktree à la main (`git worktree add <chemin> <branche>`). | `use_worktree: true` s'il modifie un dépôt ; `false` s'il ne fait que lire, ou si la tâche part du travail non commité de l'utilisateur ou livre dans son dossier (un seul écrivain à la fois) ; `source_branch` pour une branche existante ou une chaîne empilée ; `cwd` pour un autre dépôt. |
+   | Suivi | L'app te notifie à sa fin. Note son heure de lancement et sa durée attendue dans la liste. | `wake_when_done: true` ; pas de `permission_mode` (elle hérite du tien). |
    | `model`, `effort` : tâche entièrement écrite ou mécanique | Modèle moins cher (paramètre `model`), `effort` bas. | Idem. |
    | `model`, `effort` : diagnostic ou conception | Rien : hérite de la session. | Idem. |
    | `model`, `effort` : vérification et synthèse | Jamais moins que la session. | Idem. |
@@ -140,7 +145,7 @@ l'utilisateur, pour une étape qu'il a demandé de mettre dans sa propre session
 4. **La vérification.** Le rapport du worker colle chaque commande de l'Eval et sa sortie.
    Rejoue toi-même 1 à 3 de ces commandes au lieu de tout relire, et regarde l'état réel (diff,
    fichiers, PR ; session : `get_session`, `list_events`) : ne crois pas le rapport sur parole.
-   - Tout passe → tâche « faite ». Lance aussitôt toute tâche prête ; archive le worker.
+   - Tout passe → tâche « faite ». Lance aussitôt toute tâche prête ; archive la session.
    - Un point ne passe pas → au **même** worker : « À CORRIGER — <ligne d'Eval qui échoue, ce
      que tu as vu> ». 2 `À CORRIGER` sur le même point → réécris l'Eval ; au 3e, remonte à
      l'utilisateur. 2 `À CORRIGER` avec un modèle réduit → relance avec le modèle de la session.
@@ -157,21 +162,26 @@ l'utilisateur, pour une étape qu'il a demandé de mettre dans sa propre session
 - **Montre la liste** à chaque changement d'état : `mcp__ccd_turn__update_plan` s'il existe,
   sinon quelques lignes dans ton message. Avec plusieurs PR, montre aussi l'état de chacune.
 - **L'utilisateur la change en te parlant** (« ajoute », « fais T3 d'abord »). « Enlève » ou
-  « remplace » une tâche en cours → `STOP — <raison>` à son worker, puis archive. Retour sur une
-  tâche archivée → `unarchive_session` si c'est une correction ; sinon nouveau worker.
-- **Après une compaction** : reconstruis la liste (`list_sessions`, `get_status`) avant d'agir.
+  « remplace » une tâche en cours → `STOP — <raison>` à son worker, puis archive ; dis ce que
+  deviennent sa branche et sa PR (une PR ne se ferme qu'avec l'accord de l'utilisateur). Retour
+  sur une tâche archivée → `unarchive_session` si c'est une correction ; sinon nouveau worker.
+- **Après une compaction**, reconstruis la liste avant d'agir : `ListAgents` (sous-agents),
+  `list_sessions` (sessions), `get_status` (PR). Un accord de merge que tu ne retrouves pas dans
+  ton contexte → redemande-le.
 
 ### Les PR
 
-- **Un seul message du worker** : `PRÊT À MERGER — <URL>` (CI verte, Eval ok). Tu rattaches la
-  PR à ta session **une fois**, à la vérification (`mcp__ccd_pr__bind_pr`, URL complète). Le
-  suivi de la CI (`set_monitor`, Auto-fix) reste au worker.
+- **Fin du worker** : son rapport commence par `PRÊT À MERGER — <URL>` (session : elle suit sa CI
+  et attend le vert) ou par `PR OUVERTE — <URL>` (sous-agent : Eval rejouée, CI non attendue).
+  Rattache la PR à ta session **une fois**, à la vérification (`mcp__ccd_pr__bind_pr`). PR d'un
+  sous-agent : lis sa CI avec `mcp__ccd_pr__get_status`, sans boucle ; verte → question de
+  merge ; rouge → `À CORRIGER` au même sous-agent ; en cours → relis-la au prochain réveil.
 - **Merge** : jamais sans l'accord de l'utilisateur, donné dans le chat (une PR : « PR prête —
-  <URL>, je merge ? » ; plusieurs : « L'annonce »). Il a dit « auto quand c'est vert » →
-  `mcp__ccd_pr__set_auto_merge` sur la PR rattachée. Sinon → `MERGE — <URL>` au worker qui
-  possède la PR ; il merge et répond `MERGÉ`.
-- **Plusieurs PR sur la même base** : une file, une merge à la fois ; `REBASE` seulement sur
-  conflit ou refus de GitHub (`references/flux.md` §1).
+  <URL>, je merge ? » ; plusieurs : « L'annonce »). « Auto quand c'est vert » →
+  `mcp__ccd_pr__set_auto_merge` sur chaque PR vérifiée : GitHub merge, pas de file. Sinon →
+  `MERGE — <URL>` au worker qui possède la PR, une merge à la fois ; il répond `MERGÉ`.
+- **`REBASE`** seulement sur conflit ou refus de GitHub. `bind_pr` refusé → lien de la PR dans
+  ton rapport, merge demandée à l'utilisateur, par lot. Détail : `references/flux.md` §1.
 
 ### Brief du worker
 
