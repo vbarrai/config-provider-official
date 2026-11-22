@@ -2,14 +2,13 @@
 
 Version 2.0.0.
 
-Le `prompt` de tout worker, sous-agent (`Agent`) ou session (`start_session`). Lis ce fichier
-une fois, au premier lancement ; remplis les `<…>` à chaque tâche ; ne retire aucune règle, sauf
-la règle « PR » quand la tâche n'a pas de PR.
+Le `prompt` de tout worker, sous-agent (`Agent`) ou session (`start_session`). Remplis les
+`<…>` à chaque tâche ; ne retire aucune règle, sauf la règle « PR » quand la tâche n'a pas de
+PR.
 
 - La première ligne est `WORKER <name>`, exactement : un worker se reconnaît à elle.
-- U1, U2 et la règle du hook : ce gabarit est leur seule copie pour les workers. Le brief
-  d'équipe (`team-mode.md`) les recopie d'ici, mot pour mot. U1 et U2 sont ceux de SKILL.md :
-  modifie-les ensemble.
+- U1, U2 et la règle du hook : le brief d'équipe (`team-mode.md`) les recopie d'ici, mot pour
+  mot. U1 et U2 sont ceux de SKILL.md : modifie-les ensemble.
 - « Livraison » : où le résultat doit arriver (SKILL.md, « Le cycle d'une tâche », étape 2,
   « Isolation »). Départ du travail non commité de l'utilisateur, avec une PR : dis au worker
   de créer la branche sur place et de le dire dans son rapport.

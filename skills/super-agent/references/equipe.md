@@ -5,9 +5,6 @@ Version 2.0.0.
 À lire quand un critère de « Passer à une équipe » (SKILL.md) est rempli. Seuils, U1, U2, règle
 de blocage et repli : SKILL.md ; ils valent aussi pour l'équipe.
 
-**L'organisation est un livrable** : tu conçois la topologie, tu l'écris dans un plan, tu le
-montres, puis tu l'exécutes.
-
 ## Étape 0 — Choisir le mode et vérifier ses prérequis (toujours, en premier)
 
 - **Mode sous-agents** (par défaut) : il lui faut les *agent teams* (agents nommés) : fais la
@@ -31,9 +28,8 @@ En 6 lignes au plus :
    qui le remplissent (ceux de l'utilisateur quand il en donne), et ce qui n'en est pas un. Il
    filtre tout le reste : il va en tête de `plan.md` et de chaque brief.
 
-Fais un **repérage inline** si le découpage en dépend (lister les fichiers, lire le diff,
-chercher les sources principales) : il faut connaître les éléments à répartir. Sans le
-plafond des 3 lectures, mais une recherche de fond part chez un sous-agent.
+Fais un **repérage inline** si le découpage en dépend : il faut connaître les éléments à
+répartir. Sans le plafond des 3 lectures, mais une recherche de fond part chez un sous-agent.
 
 Une information manque et change le découpage : **une** question précise. Sinon, avance.
 
@@ -71,7 +67,7 @@ Ouvre `topologies.md` à la section de la famille et construis le plan :
   tâche », étape 1) : c'est contre cet Eval que tu acceptes ou renvoies le résultat. Pour le
   code, les fichiers de chaque tâche (un fichier n'appartient qu'à une seule tâche).
 - **Rôles** : les workers, et les rôles spécialisés dont le plan écrit le besoin
-  (`topologies.md` §6). Un watchdog : seulement dans le cas de « Seuils ».
+  (`topologies.md` §6).
 - **Modèle et effort par rôle** : la table `model` / `effort` de SKILL.md (étape 2 du cycle) :
   `effort: 'low'` pour les étapes mécaniques, plus haut que la session seulement pour les
   juges et vérificateurs difficiles.

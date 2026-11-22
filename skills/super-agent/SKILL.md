@@ -33,7 +33,7 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 |---|---|
 | Ce n'est pas une action (test ci-dessus : sans outil, ou 3 lectures au plus) | Réponds toi-même. |
 | Lecture ou recherche au-delà de ce petit repérage, ou tâche sans branche ni PR | Un **sous-agent** dans la session (outil `Agent`, brief WORKER). |
-| Branche ou PR, flux parallèles, ou l'utilisateur demande une session | Un **worker en session** (`start_session`) si l'utilisateur a demandé une session avec ses mots (étape 2 du cycle) ; sinon un sous-agent. L'isolation dépend de la livraison, jamais de la durée (étape 2, ligne « Isolation »). |
+| Branche ou PR, flux parallèles, ou l'utilisateur demande une session | Un **worker en session** (`start_session`) si l'utilisateur a demandé une session avec ses mots (étape 2 du cycle) ; sinon un sous-agent. Isolation : étape 2, ligne « Isolation ». |
 | Lancer des workers | Pas de feu vert : l'annonce (« Router et workers »), puis lance. |
 | 2 workers ou plus | Une stratégie de communication, 2-3 lignes dans chaque brief. Par défaut : tout passe par le router ; un worker qui doit toucher le fichier d'un autre écrit au router, qui arbitre. |
 | Workers actifs en même temps, hors équipe | **4 au plus** par router ; l'utilisateur change ce chiffre en une phrase. « Actif » = en train de travailler : un worker qui attend une merge ou une réponse de l'utilisateur ne compte pas. Les tâches en plus attendent dans la liste et partent dès qu'une place se libère. |
@@ -69,9 +69,8 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 
 **L'annonce avant de lancer.** Un seul worker : une ligne (« Je lance 1 sous-agent pour
 <tâche> ; dis "en sessions" pour une session. »). 2 workers ou plus : le gabarit ci-dessous ; la
-ligne Merge seulement dès 2 PR prévues ; en sessions ou en équipe, la ligne Forme le dit. Lance
-sans attendre de réponse. « En sessions » dit après coup vaut pour ses tours suivants, pas pour
-un tour de réveil.
+ligne Merge seulement dès 2 PR prévues ; en sessions ou en équipe, la ligne Forme le dit.
+« En sessions » dit après coup vaut pour ses tours suivants, pas pour un tour de réveil.
 
 ```
 Forme : <n> flux → <n> sous-agents (dis « en sessions » pour des sessions)
@@ -145,8 +144,8 @@ l'utilisateur, pour une étape qu'il a demandé de mettre dans sa propre session
 4. **La vérification.** Le rapport du worker colle chaque commande de l'Eval et sa sortie.
    Rejoue toi-même 1 à 3 de ces commandes au lieu de tout relire, et regarde l'état réel (diff,
    fichiers, PR ; session : `get_session`, `list_events`) : ne crois pas le rapport sur parole.
-   - Tout passe → tâche « faite ». Lance aussitôt toute tâche prête ; archive la session si la
-     règle d'archivage de « Router et workers » le permet.
+   - Tout passe → tâche « faite ». Archive la session si la règle d'archivage de « Router et
+     workers » le permet.
    - Un point ne passe pas → au **même** worker : « À CORRIGER — <ligne d'Eval qui échoue, ce
      que tu as vu> ». 2 `À CORRIGER` sur le même point → réécris l'Eval ; au 3e, remonte à
      l'utilisateur. 2 `À CORRIGER` avec un modèle réduit → relance avec le modèle de la session.

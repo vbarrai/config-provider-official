@@ -30,7 +30,7 @@ dépôt ; des dépôts différents n'ont pas de file commune.
 - **Après une merge : pas de rebase d'office**, même si la base bouge sans toi (autres routers,
   collègues). `REBASE — <branche de base> a bougé (PR <URL> mergée)` part seulement au worker
   dont la PR est en conflit, ou dont GitHub refuse la merge (branche à jour exigée).
-  Exception : une branche empilée (§2) → `REBASE` au worker suivant dès la merge de sa base.
+  Exception : une branche empilée (§2).
 - **Rebase raté ou CI rouge** : la PR sort de la tête de file, la suivante passe devant.
 - **Après un lot de merges**, regarde la CI de la base : deux PR vertes séparément peuvent
   casser ensemble. Rouge → une nouvelle tâche, dite en une ligne.

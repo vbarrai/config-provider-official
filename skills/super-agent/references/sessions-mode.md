@@ -2,22 +2,21 @@
 
 Version 2.0.0.
 
-**Seulement si l'utilisateur a demandé des sessions avec ses mots** (SKILL.md, « Le cycle d'une
-tâche », étape 2, ligne « Quand »). Chaque agent du plan est une **vraie session** liée à
-celle-ci, et elles se parlent par `SendMessage`. Tout `team-mode.md` vaut ici, sauf ses
-prérequis, son lancement et son mode dégradé. U1 : n'ouvre aucune fenêtre sur une session.
+**Seulement si l'utilisateur a demandé des sessions avec ses mots** (`equipe.md`, étape 0).
+Chaque agent du plan est une **vraie session** liée à celle-ci, et elles se parlent par
+`SendMessage`. Tout `team-mode.md` vaut ici, sauf ses prérequis, son lancement et son mode
+dégradé. U1 : n'ouvre aucune fenêtre sur une session.
 
 ## Ce qu'il faut savoir avant de lancer
 
-- **Coût** : plus lent et plus cher que des sous-agents (chaque session charge tout son
-  contexte). « Seuils » compte les sessions pareil. Lance ensemble les sessions d'une vague.
+- **Nombre** : « Seuils » compte les sessions comme les autres agents. Lance ensemble les
+  sessions d'une vague.
 - **Ce qui te revient** : à la fin d'un tour, seulement les 400 premiers caractères du rapport
   d'une session. Le vrai résultat passe par son fichier `<nom>.json`.
-- **Messages** : une session reçoit un message entre deux appels d'outils, ou dans un nouveau
-  tour si elle est au repos. Ils sont livrés sans validation tant que toutes les sessions sont
-  dans la même famille de mode de permission : **ne change pas le mode** des sessions que tu
-  lances (pas de `permission_mode` : elles héritent du tien). Sinon ils restent bloqués en
-  attente d'une validation que Desktop ne peut pas afficher.
+- **Messages** : ils sont livrés sans validation tant que toutes les sessions sont dans la
+  même famille de mode de permission : **ne change pas le mode** des sessions que tu lances
+  (pas de `permission_mode` : elles héritent du tien). Sinon ils restent bloqués en attente
+  d'une validation que Desktop ne peut pas afficher.
 - **Pas de nouvelle session depuis un tour de réveil** (règle et exception : SKILL.md, « Tour
   de réveil »). Pour une vague suivante, **réutilise les sessions existantes** par message, ou
   lance un sous-agent.
@@ -46,8 +45,7 @@ prérequis, son lancement et son mode dégradé. U1 : n'ouvre aucune fenêtre su
      une session au repos attend souvent juste son prochain sujet : seuls le `FAIT` après ton
      `STOP` et son `<nom>.json` disent qu'elle a fini.
 3. Dis à l'utilisateur, en une ligne, que l'équipe est lancée et que tu reviens avec le
-   résultat, et pose la question d'archivage (SKILL.md, « Router et workers »). Le panneau
-   « Swarm » (`/swarm-view`), s'il est installé, lui montre l'état et l'avancement de chacun.
+   résultat, et pose la question d'archivage (SKILL.md, « Router et workers »).
 
 **Le marqueur `SWARM <slug> <nom>`** est la 2e ligne du brief, exactement (slug et nom en
 minuscules, chiffres, `-`, `_` ou `.`), reprise par la commande `echo` de la 3e. Le mod

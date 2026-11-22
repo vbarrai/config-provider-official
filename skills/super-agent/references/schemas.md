@@ -4,7 +4,7 @@ Version 2.0.0.
 
 Chaque agent rend un objet validé via l'option `schema` de `agent()`. Ces schémas sont le seul
 canal entre agents : une vague reçoit les sorties de la précédente dans son prompt (JSON) ou via
-`args`. Copie les constantes utiles en tête du script Workflow (JavaScript pur, pas de TypeScript).
+`args`. Script Workflow : JavaScript pur, pas de TypeScript.
 
 Contraintes de l'outil : racine `{type: 'object', properties: {...}}`, `required` inclus dans
 `properties`.

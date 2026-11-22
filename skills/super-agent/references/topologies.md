@@ -2,10 +2,9 @@
 
 Version 2.0.0.
 
-Un patron par famille (§1 à §4) : vagues, redondance, vérification, livrable par défaut. Le §5
-s'y ajoute quand le goal est ouvert, les rôles du §6 sur un besoin écrit dans le plan. Combine
-les patrons en séquence si le problème l'exige (ex. diagnostic → code) : les agents de toutes
-les séquences comptent dans le total. Les nombres d'agents valent pour un problème moyen.
+Combine les patrons en séquence si le problème l'exige (ex. diagnostic → code) : les agents de
+toutes les séquences comptent dans le total. Les nombres d'agents valent pour un problème
+moyen.
 
 ## 1. Recherche / analyse — « carte puis fusion »
 
@@ -40,8 +39,6 @@ confirmation indépendante. Dédoublonne avant de compter les accords.
    contexte appelant l'empêche ? »). Constat retenu s'il n'est pas réfuté. Les constats
    mineurs passent sans contre-expertise, marqués « non confirmé ».
 4. **Synthèse** (1 agent) : classement par gravité.
-
-**Redondance** : concentrée sur les constats graves (vérification), pas sur la recherche.
 
 **Livrable par défaut** : rapport de constats classés, avec localisation et scénario d'échec.
 
@@ -96,8 +93,6 @@ Pour du code découpable en morceaux aux fichiers disjoints.
 5. **Rapport** : pas de texte à synthétiser ; tu rapportes l'état (branche, tests, revue,
    restes).
 
-Un **reproducer** (§6) peut tourner pendant le run.
-
 **Une PR par worker** (avec l'accord de l'utilisateur) → file de merge (`flux.md` §1), sans
 merger. « Les PR » de SKILL.md s'applique ; ajoute au brief la règle « PR » de `brief.md`
 (sous-agent ou session) : la ligne `PRÊT À MERGER — <URL>` passe avant `FAIT`.
@@ -140,7 +135,7 @@ puis termine par une seule ligne : "FAIT <chemin>" ou "ÉCHEC <raison>".
 ```
 
 **Apporteurs de sujets** (1 à 2, un angle chacun : ex. l'un lit le code, l'autre les tickets,
-Slack et la doc existante). Un sujet reformulé est un doublon.
+Slack et la doc existante).
 
 ```
 Ton rôle : apporteur de sujets. Angle : <code | tickets et Slack | doc existante | …>.
@@ -176,8 +171,9 @@ livrable/STYLE.md ; après le STOP, assemble le livrable final dans livrable/IND
 Avancement : fiches rédigées / matières reçues.
 ```
 
-**Toi, le coordinateur** : tu es le **seul** à écrire `sujets.md` (id stable `s-01`, `s-02`… ;
-statut : proposé, accepté, refusé + raison, en cours <nom>, matière prête, rédigé). À chaque
+**Toi, le coordinateur** : tu es le **seul** à écrire `sujets.md` (id stable `s-01`, `s-02`…,
+qui sert à dédoublonner, pas le texte ; statut : proposé, accepté, refusé + raison, en cours
+<nom>, matière prête, rédigé). À chaque
 `SUJETS`, accepte ou refuse chaque sujet selon le goal (hors goal, même intéressant : refusé,
 avec la raison), donne-lui un id, réponds à l'apporteur, et donne chaque sujet accepté à un
 exécutant libre (`SUJET`). Tu tiens le budget de sujets.
@@ -188,15 +184,13 @@ exécutant libre (`SUJET`). Tu tiens le budget de sujets.
   stop de l'utilisateur : `STOP` à chacun. Apporteurs et exécutants écrivent leur `<nom>.json`
   et finissent ; les rédacteurs finissent leurs fiches en cours, `redac-1` assemble le
   livrable, puis ils finissent. `FAIT` n'arrive qu'après un `STOP`.
-- Un vérificateur peut relire quelques fiches contre leur matière.
 - Le mode rapide (`Workflow`) ne fait pas de boucle ouverte : trois phases fermées
   (apporteurs jusqu'au budget, puis exécutants, puis rédacteurs).
 
 ## 6. Rôles spécialisés — merger, checker, tester, reproducer, watchdog
 
-Chacun a un seul métier, ne parle pas à l'utilisateur, et compte dans le total d'agents. **Un
-rôle se prend sur un besoin écrit dans le plan**, pas sur un seuil automatique. Tu ne fais
-aucun de ces métiers.
+**Un rôle se prend sur un besoin écrit dans le plan**, pas sur un seuil automatique, et compte
+dans le total d'agents. Tu ne fais aucun de ces métiers.
 
 | Rôle | Le besoin qui le justifie | Rend |
 |---|---|---|
@@ -204,7 +198,7 @@ aucun de ces métiers.
 | **Checker** (aux §1 et §2 : le « vérificateur » ou « contre-expert ») | Un résultat à accepter que tu ne peux pas vérifier toi-même en rejouant 1 à 3 commandes. | `VERDICT` par tâche |
 | **Tester** (au fil de l'eau, avant le merge) | Une interface ou des parcours à cliquer que les workers ne peuvent pas tester eux-mêmes. | `VERDICT` |
 | **Reproducer** | Un bug à reproduire, ou un run long sur une app qu'on peut lancer en local. À lancer quand le besoin apparaît (sous-agent), pas d'avance. | `HYPOTHESIS` (cause et preuve) et, s'il corrige, `CHANGESET` |
-| **Watchdog** | Le seul cas écrit dans « Seuils » (SKILL.md). Brief : `sessions-mode.md`, « Watchdog ». | des messages `ALERTE` ; à la fin, un rapport des alertes |
+| **Watchdog** | Le seul cas écrit dans « Seuils » (SKILL.md). Brief : `sessions-mode.md`, « Watchdog ». | des `ALERTE` |
 
 Les workers, eux, rendent le schéma de la famille (`FINDING`, `HYPOTHESIS`, `CHANGESET`,
 `MATIERE`).

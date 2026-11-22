@@ -4,7 +4,7 @@ Version 2.0.0.
 
 Les agents sont des **sous-agents de cette session** et **se parlent pendant le travail**
 (`SendMessage`), sans attendre la fin d'une vague. En mode sessions, lis aussi
-`sessions-mode.md`. Mode rapide (`Workflow`) : `equipe.md`, étape 5.
+`sessions-mode.md`.
 
 Le mod **swarm-view** montre l'équipe dans un panneau « Swarm », ouvert au premier agent
 lancé ou par `/swarm-view`. Mod absent : dis-le une fois au début ; les agents ne sont alors
@@ -31,11 +31,11 @@ l'outil `Agent` n'existe que si les *agent teams* sont activées :
    Il faut la valeur `"1"`, dans l'environnement ou dans un fichier de réglages. Un `"0"` dans
    un fichier de projet l'emporte sur un `"1"` dans `~/.claude/settings.json`.
 2. **L'outil.** Ton outil `Agent` doit avoir un paramètre `name` : c'est la preuve décisive.
-   Le réglage peut être présent sans être pris en compte, dans une session ouverte avant lui.
 
 - **Les deux sont bons** : dis-le en une ligne (« Agent teams actives ») et passe à l'étape 1.
-- **Réglage présent, mais `Agent` sans `name`** : la session est trop ancienne. Dis à
-  l'utilisateur d'ouvrir une nouvelle session et d'y redonner sa demande. Arrête-toi là.
+- **Réglage présent, mais `Agent` sans `name`** : la session est plus ancienne que le
+  réglage. Dis à l'utilisateur d'ouvrir une nouvelle session et d'y redonner sa demande.
+  Arrête-toi là.
 - **Réglage absent ou à `"0"`** : explique-le et propose de l'activer dans
   `~/.claude/settings.json`, en disant qu'il vaut pour **toutes ses sessions**. Ne modifie ce
   fichier qu'avec un oui explicite, puis demande d'ouvrir une nouvelle session. Refus : **mode
@@ -46,8 +46,8 @@ l'outil `Agent` n'existe que si les *agent teams* sont activées :
 - **Claude Desktop** (constaté le 2026-10-28) : un agent nommé reste un **sous-agent en
   arrière-plan**, pas un coéquipier. Le nom suffit : les agents s'écrivent par `SendMessage`
   avec leurs noms, et `main` les joint aussi.
-- **Terminal interactif** : il devient un **coéquipier** (*teammate*), qui ne peut pas créer
-  d'autres coéquipiers ; une seule équipe par session.
+- **Terminal interactif** : il devient un **coéquipier** (*teammate*) ; une seule équipe par
+  session.
 - Un agent en cours ne survit pas à un `/resume`. Une mise en veille de l'ordinateur peut le
   couper : relance-le avec `SendMessage` (il garde son contexte).
 
@@ -70,7 +70,7 @@ Crée-le avant de lancer ; `<slug>` = sujet court + date du jour, ex. `bug-login
    dépendances. Sinon (pas de liste de tâches partagée), la liste vit dans `plan.md`.
 3. Lance chaque agent avec l'outil `Agent`, **dans le même message** :
    - `name` : court et stable (`hyp-cache`, `revue-secu`, `impl-api`) ;
-   - `model` et `effort` : la table de SKILL.md (« Le cycle d'une tâche », étape 2) ;
+   - `model` et `effort` : ceux du plan ;
    - `subagent_type: "general-purpose"` (il lui faut tous les outils, navigateur et
      `SendMessage` compris) ;
    - `isolation: "worktree"` seulement pour un agent qui modifie du code. Il est alors un
@@ -137,8 +137,7 @@ changé). Puis termine par une seule ligne : "FAIT <chemin>" ou "ÉCHEC <raison>
 
 ## Qui parle à qui
 
-Le plan le fixe : écris-le dans `plan.md` et dans chaque brief. Les types de messages sont
-tous dans le brief d'équipe, dans cette table et sous elle.
+Le plan le fixe : écris-le dans `plan.md` et dans chaque brief.
 
 | Famille | Qui parle à qui |
 |---|---|
@@ -163,9 +162,9 @@ La consigne à ajouter au brief :
 > faire. Capture d'écran aux moments clés, rangée dans le dossier d'échange. Aucun mot de passe,
 > aucun formulaire qui modifie des données réelles.
 
-Les sous-agents partagent le navigateur de la session (tous les onglets dans le même panneau)
-et se volent le premier plan : au-delà de 2 ou 3 agents qui naviguent, échelonne leur passage
-(dépendances de tâches). Une session, elle, a son propre navigateur.
+Les sous-agents partagent le navigateur de la session et se volent le premier plan : au-delà
+de 2 ou 3 agents qui naviguent, échelonne leur passage (dépendances de tâches). Une session,
+elle, a son propre navigateur.
 
 ## Pendant le travail
 
