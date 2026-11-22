@@ -205,7 +205,8 @@ Les workers, eux, rendent le schéma de la famille (`FINDING`, `HYPOTHESIS`, `CH
 
 Lance ces rôles dans la même vague que les workers : ils attendent leur premier message.
 Exception : le reproducer, lancé quand un bug arrive. Checker et tester cherchent ce qui ne
-marche pas, pas à confirmer. Leurs blocs, pour le brief d'équipe :
+marche pas, pas à confirmer : une vérification non rejouée est « non vérifiée », jamais « OK ».
+Leurs blocs, pour le brief d'équipe :
 
 **Merger**
 

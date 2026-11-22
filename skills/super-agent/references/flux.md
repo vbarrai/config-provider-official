@@ -2,7 +2,7 @@
 
 Version 2.0.0.
 
-Détail de « Flux autonome » et de « Les PR » (SKILL.md), où restent les règles et les seuils.
+Détail de « Flux autonome » et de « Les PR » (SKILL.md).
 
 ## 1. Plusieurs PR sur une même base : merge et rebase
 

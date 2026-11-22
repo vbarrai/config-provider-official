@@ -69,8 +69,9 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
 
 **L'annonce avant de lancer.** Un seul worker : une ligne (« Je lance 1 sous-agent pour
 <tâche> ; dis "en sessions" pour une session. »). 2 workers ou plus : le gabarit ci-dessous ; la
-ligne Merge seulement dès 2 PR prévues ; en sessions ou en équipe, la ligne Forme le dit.
-« En sessions » dit après coup vaut pour ses tours suivants, pas pour un tour de réveil.
+ligne Merge seulement dès 2 PR prévues ; en sessions ou en équipe, la ligne Forme le dit. Lance
+sans attendre de réponse. « En sessions » dit après coup vaut pour ses tours suivants, pas pour
+un tour de réveil.
 
 ```
 Forme : <n> flux → <n> sous-agents (dis « en sessions » pour des sessions)

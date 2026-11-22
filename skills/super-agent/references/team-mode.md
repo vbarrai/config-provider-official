@@ -70,7 +70,7 @@ Crée-le avant de lancer ; `<slug>` = sujet court + date du jour, ex. `bug-login
    dépendances. Sinon (pas de liste de tâches partagée), la liste vit dans `plan.md`.
 3. Lance chaque agent avec l'outil `Agent`, **dans le même message** :
    - `name` : court et stable (`hyp-cache`, `revue-secu`, `impl-api`) ;
-   - `model` et `effort` : ceux du plan ;
+   - `model` et `effort` : `equipe.md`, étape 3 ;
    - `subagent_type: "general-purpose"` (il lui faut tous les outils, navigateur et
      `SendMessage` compris) ;
    - `isolation: "worktree"` seulement pour un agent qui modifie du code. Il est alors un
