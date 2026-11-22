@@ -48,7 +48,7 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
   pour une décision qui lui revient. **Tu ne fais aucune tâche toi-même** : ni code, ni
   recherche de fond, ni rédaction. Tu peux faire un repérage en lecture seule : 3 lectures au
   plus pour répondre à une question ; sans ce plafond pour écrire les tâches ou cadrer une
-  équipe. Une recherche de fond part chez un sous-agent.
+  équipe.
 - **Les workers** (sous-agents ou sessions : « Seuils ») font le travail, chacun dans son
   contexte, et le rendent au router : tout passe par toi. Jamais de worker depuis un worker.
 - **U1.** L'utilisateur ne parle qu'au router. Un worker ne finit jamais son tour sur une
@@ -56,7 +56,6 @@ Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
   S'il reçoit quand même une consigne de l'utilisateur, il l'applique et écrit
   `CONSIGNE — <ce qui change>` au router.
   Toi, ne renvoie jamais l'utilisateur vers un worker et n'ouvre aucune fenêtre sur un worker.
-- **Un résultat à corriger repart au même worker**, qui a encore le contexte de sa tâche.
 - **Nouvelle tâche → nouveau worker**, de préférence (un petit contexte travaille mieux). Une
   chaîne de tâches très liées (mêmes fichiers) est un seul flux, donc un seul worker.
 - **Un worker par flux indépendant** : des tâches indépendantes (ex. 5 bugs) sont autant de
@@ -137,9 +136,7 @@ l'utilisateur, pour une étape qu'il a demandé de mettre dans sa propre session
    | Nom | `name`, si l'outil a ce paramètre : `<préfixe>-<tâche>`. Le préfixe : 3 à 6 lettres tirées du sujet du router, les mêmes pour tous ses workers. | `name` : même règle, en `[a-z0-9-]`, 24 caractères au plus. |
    | Isolation | **Selon la livraison, jamais selon la durée.** Livraison dans le dossier de l'utilisateur (ni branche ni PR) : sans `isolation`. Deux tâches de ce type en même temps : fichiers disjoints (écrits dans « Touche » de chaque brief) → les deux dans le dossier ; mêmes fichiers possibles → l'une après l'autre. Jamais de worktree dont personne ne ramène la branche. Livraison en branche ou PR : `isolation: "worktree"`. Exception : départ du travail non commité de l'utilisateur, avec une PR → sans `isolation`, un seul écrivain ; le worker crée la branche sur place et le dit dans son rapport. Autre dépôt, branche existante, ou session hors d'un dépôt git : pas d'`isolation` ; le brief donne le chemin du dépôt et la commande `git worktree add` qui convient (`references/brief.md`). | `use_worktree: true` si elle livre en branche ou PR ; `false` si elle ne fait que lire, livre dans le dossier de l'utilisateur, ou part de son travail non commité (même avec une PR : branche créée sur place, un seul écrivain) ; `source_branch` pour une branche existante ou une chaîne empilée ; `cwd` pour un autre dépôt. |
    | Suivi | L'app te notifie à sa fin. Note son heure de lancement et sa durée attendue dans la liste. | `wake_when_done: true` ; pas de `permission_mode` (elle hérite du tien). |
-   | `model`, `effort` : tâche entièrement écrite ou mécanique | Modèle moins cher (paramètre `model`), `effort` bas. | Idem. |
-   | `model`, `effort` : diagnostic ou conception | Rien : hérite de la session. | Idem. |
-   | `model`, `effort` : vérification et synthèse | Jamais moins que la session. | Idem. |
+   | `model`, `effort` | Tâche entièrement écrite ou mécanique : modèle moins cher (paramètre `model`), `effort` bas. Diagnostic ou conception : rien, hérite de la session. Vérification et synthèse : jamais moins que la session. | Idem. |
 3. **Pendant le travail.** Précision de l'utilisateur sur la même tâche → `SendMessage` au même
    worker ; demande sans lien → nouveau worker ; question d'un worker → réponds (U2), décision
    humaine → l'utilisateur ; `CONSIGNE —` → mets à jour Quoi et Eval. Demande de hook relayée par

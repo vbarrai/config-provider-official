@@ -1,24 +1,24 @@
 # Squelettes de scripts Workflow
 
-Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et applique `SKILL.md` seul.
+Version 2.0.0.
 
-Un squelette par patron de `topologies.md`. Ce sont des points de départ : remplace les `<…>`,
-ajuste le nombre d'agents au plan **montré à l'utilisateur**, et colle les schémas de `schemas.md` en tête.
+Un squelette par patron de `topologies.md` : un point de départ. Ajuste le nombre d'agents au
+plan **montré à l'utilisateur**, et colle les schémas de `schemas.md` en tête.
 
 Rappels de l'API (détail dans le skill `workflow-authoring`) :
 
 - `meta` est un littéral pur ; ses `phases` reprennent exactement les titres de `phase()`.
 - JavaScript pur ; pas de `Date.now()`, `Math.random()`, `new Date()` : passe ce qui varie via `args`.
 - `agent()` rend `null` en cas d'échec : filtre avec `.filter(Boolean)` et **compte** les trous.
-- `pipeline()` par défaut ; `parallel()` seulement quand une étape a besoin de tous les résultats.
+- `pipeline()` par défaut ; une barrière `parallel()` seulement quand une étape a besoin de
+  **tous** les résultats précédents (dédoublonnage, synthèse, réfutation croisée).
 - `log()` tout ce qui est écarté ou tronqué.
-- Chaque prompt d'`agent()` commence par la ligne `WORKER <id>`, comme tout brief du skill, et
-  dit de ne pas invoquer le skill super-agent. Les squelettes passent tous leurs prompts par
-  l'enveloppe `worker(id, prompt)` : colle-la en tête du script, avec les schémas :
+- Chaque prompt d'`agent()` commence par `WORKER <id>`, comme tout brief du skill, et dit de ne
+  pas invoquer le skill super-agent : les squelettes passent leurs prompts par l'enveloppe
+  `worker(id, prompt)`, à coller en tête du script :
   ``const worker = (id, p) => `WORKER ${id}\nTu es un worker : ne lance aucun agent et n'invoque pas le skill super-agent.\n${p}`;``
 
-Le premier argument `args` de chaque template contient le plan montré (tâches, angles,
-hypothèses…), pour que le script ne réinvente rien.
+`args` contient le plan montré (tâches, angles, hypothèses…) : le script ne réinvente rien.
 
 ---
 
@@ -212,5 +212,5 @@ return { changes: done, integration: integ, review, missing: args.plan.tasks.len
 ```
 
 Tâche bloquée ou tests rouges : ne relance pas en boucle. Rapporte, et propose soit une vague de
-correction (dans le total du plan ; 11 agents ou plus au total → accord, voir « Seuils »), soit
-une reprise par un seul worker (sous-agent) qui enchaîne les tâches.
+correction (dans le total du plan et le seuil d'accord de « Seuils »), soit une reprise par un
+seul worker (sous-agent) qui enchaîne les tâches.

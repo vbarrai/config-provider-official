@@ -1,97 +1,70 @@
 # Catalogue des topologies
 
-Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et applique `SKILL.md` seul.
+Version 2.0.0.
 
-Quatre patrons, un par famille. Chacun fixe : la forme des vagues, la règle de redondance, la
-méthode de vérification et le livrable par défaut. Un cinquième (§5, goal ouvert) s'ajoute à la
-famille quand le livrable est une collection qui peut grandir : apporteurs de sujets,
-exécutants, rédacteurs. Combine-les en séquence si le problème l'exige
-(ex. diagnostic → code), en comptant les agents de toutes les séquences dans le total.
-
-Dans tous les patrons, tu es le **router** et les agents qui font le travail sont les
-**workers** (SKILL.md, « Router et workers »). Les rôles spécialisés (merger, checker, tester,
-reproducer, watchdog) sont décrits au §6 : chacun se prend sur un besoin écrit dans le plan.
-
-Ordres de grandeur indiqués pour un problème moyen ; adapte au découpage réel.
-
----
+Un patron par famille (§1 à §4) : vagues, redondance, vérification, livrable par défaut. Le §5
+s'y ajoute quand le goal est ouvert, les rôles du §6 sur un besoin écrit dans le plan. Combine
+les patrons en séquence si le problème l'exige (ex. diagnostic → code) : les agents de toutes
+les séquences comptent dans le total. Les nombres d'agents valent pour un problème moyen.
 
 ## 1. Recherche / analyse — « carte puis fusion »
 
-**Quand** : question large, plusieurs sources ou sous-questions indépendantes.
+1. **Exploration** (3 à 6 agents) : une sous-question par agent ; disjointes, elles couvrent
+   ensemble la question. Chaque agent rend des `FINDING` sourcés.
+2. **Vérification** (1 à 3 agents) : sur les constats qui portent la conclusion, un
+   vérificateur relit la source primaire et rend un `VERDICT`.
+3. **Synthèse** (1 agent) : règle de fusion de `equipe.md`, étape 6.
 
-**Vagues**
-
-1. **Exploration** (3 à 6 agents) : une sous-question par agent. Les sous-questions sont
-   disjointes et, ensemble, couvrent la question. Chaque agent rend des `FINDING` sourcés.
-2. **Vérification** (1 à 3 agents) : sur les constats qui portent la conclusion, un vérificateur
-   va relire la source primaire et rend un `VERDICT`.
-3. **Synthèse** (1 agent) : fusion selon la règle de `equipe.md`, étape 6.
-
-**Redondance** : par diversité de méthode, pas par duplication. Pour une sous-question critique,
-deux agents avec des angles différents (ex. sources académiques vs retours terrain ; recherche
-par entité vs recherche par période). Option « critique de complétude » : un agent final qui
-cherche ce qui manque (source non lue, angle non exploré) ; ce qu'il trouve devient une vague
-supplémentaire si le total du plan le permet.
+**Redondance** : par diversité de méthode, pas par duplication. Sous-question critique : deux
+agents aux angles différents (ex. sources académiques vs retours terrain). Option « critique
+de complétude » : un agent final cherche ce qui manque (source non lue, angle non exploré) ;
+ce qu'il trouve devient une vague de plus si le total du plan le permet.
 
 **Vérification** : une affirmation est confirmée si sa source primaire la soutient vraiment.
-Écarte les affirmations dont la seule source est une reprise d'une autre.
+Écarte celles dont la seule source est une reprise d'une autre.
 
 **Livrable par défaut** : rapport markdown sourcé, ou tableau de comparaison.
 
-**Piège** : sous-questions qui se recouvrent, ce qui produit des doublons qui ressemblent à une
+**Piège** : des sous-questions qui se recouvrent donnent des doublons qui ressemblent à une
 confirmation indépendante. Dédoublonne avant de compter les accords.
-
----
 
 ## 2. Audit / revue — « angles multiples puis contre-expertise »
 
-**Quand** : un objet fixe (code, PR, schéma, configuration, document) à examiner.
-
-**Vagues**
-
 1. **Revue par angle** (3 à 5 agents) : un angle par agent (ex. correction, sécurité,
-   performance, cohérence avec l'existant, couverture de tests). Pour un objet volumineux,
-   croise angle × partition (mais surveille le total). Chaque agent rend des `FINDING` avec
+   performance, cohérence avec l'existant, couverture de tests). Objet volumineux : croise
+   angle × partition, en surveillant le total. Chaque agent rend des `FINDING` avec une
    localisation précise (`fichier:ligne`).
 2. **Dédoublonnage** (code, pas d'agent) : même localisation + même défaut = un seul constat.
 3. **Contre-expertise** (1 agent par constat grave, borne haute à prévoir) : un vérificateur
-   chargé de **réfuter**, avec un angle distinct de celui qui a trouvé (ex. « est-ce que ça se
-   reproduit ? », « est-ce que le contexte appelant l'empêche ? »). Constat retenu s'il n'est pas
-   réfuté. Les constats mineurs passent sans contre-expertise, marqués « non confirmé ».
+   chargé de **réfuter**, avec un angle distinct de celui qui a trouvé (ex. « est-ce que le
+   contexte appelant l'empêche ? »). Constat retenu s'il n'est pas réfuté. Les constats
+   mineurs passent sans contre-expertise, marqués « non confirmé ».
 4. **Synthèse** (1 agent) : classement par gravité.
 
 **Redondance** : concentrée sur les constats graves (vérification), pas sur la recherche.
 
 **Livrable par défaut** : rapport de constats classés, avec localisation et scénario d'échec.
 
-**Piège** : un vérificateur prompté pour confirmer confirme. Prompte toujours pour réfuter, avec
-« réfuté par défaut si incertain ».
-
----
+**Piège** : un vérificateur prompté pour confirmer confirme. Prompte toujours pour réfuter,
+avec « réfuté par défaut si incertain ».
 
 ## 3. Diagnostic / debug — « hypothèses concurrentes »
 
-**Quand** : un symptôme observé, une cause inconnue.
-
-**Vagues**
-
-0. **Repérage** (toi, inline, en lecture seule ; sans le plafond des 3 lectures, voir
-   `equipe.md`, étape 1) : rassemble le symptôme, les logs, la chronologie, le périmètre.
-   Liste 3 à 5 hypothèses réellement distinctes. Une recherche de fond part chez un sous-agent.
-1. **Enquête** (1 agent par hypothèse) : chaque agent cherche des preuves **pour et contre** son
+0. **Repérage** (toi, en lecture seule : `equipe.md`, étape 1) : le symptôme, les logs, la
+   chronologie, le périmètre. Liste 3 à 5 hypothèses réellement distinctes.
+1. **Enquête** (1 agent par hypothèse) : il cherche des preuves **pour et contre** son
    hypothèse, et une expérience qui la départagerait. Rend un `HYPOTHESIS`.
-2. **Réfutation croisée** (1 agent par hypothèse encore debout) : chaque agent reçoit toutes les
-   conclusions de la vague 1 et tente de réfuter une hypothèse **autre que la sienne d'origine**.
-   C'est une barrière : elle a besoin de tous les résultats. Lance-la dans un second workflow,
-   après avoir lu ceux de la vague 1.
+2. **Réfutation croisée** (1 agent par hypothèse encore debout) : chacun reçoit toutes les
+   conclusions de la vague 1 et tente de réfuter une hypothèse **autre que la sienne
+   d'origine**. C'est une barrière : en mode rapide, un second workflow, après avoir lu les
+   résultats de la vague 1.
 3. **Synthèse** (1 agent) : hypothèse survivante, preuves, expérience de confirmation proposée.
 
-**Redondance** : c'est le désaccord organisé. Si toutes les hypothèses de départ se ressemblent,
-le patron ne sert à rien ; reformule-les avant de lancer.
+**Redondance** : le désaccord organisé. Des hypothèses qui se ressemblent rendent le patron
+inutile : reformule-les avant de lancer.
 
-**Vérification** : la reproduction ou une preuve directe (log, trace, requête), jamais le vote.
-Une hypothèse confirmée par 3 agents sans preuve reste « non confirmée ».
+**Vérification** : la reproduction ou une preuve directe (log, trace, requête), jamais le
+vote. Une hypothèse confirmée par 3 agents sans preuve reste « non confirmée ».
 
 **Livrable par défaut** : réponse dans le chat ou court rapport : cause, preuves, correctif
 proposé. Si le correctif est du code : il tient en un worker → un sous-agent, sans second
@@ -100,180 +73,193 @@ plan ; sinon, enchaîne sur le patron 4 (nouveau plan, montré à l'utilisateur 
 
 **Piège** : en production, aucun agent n'agit (redémarrage, écriture, purge). Lecture seule.
 
----
-
 ## 4. Implémentation de code — « contrats, parallèle, intégration »
 
-**Quand** : construire ou modifier du code découpable en morceaux qui touchent des fichiers
-disjoints.
+Pour du code découpable en morceaux aux fichiers disjoints.
 
-**Vagues**
-
-1. **Contrats** (1 agent, sans isolation, lecture seule) : à partir du besoin et du code existant,
-   définit les interfaces entre morceaux (signatures, types, formats d'échange), découpe en
-   tâches et attribue à chaque tâche une liste de fichiers **disjointe**. Rend un `CONTRACT_PLAN`.
-   S'il détecte un fichier partagé incontournable ou un couplage fort, il le signale
-   (`separable: false`) et **le swarm s'arrête** : envoie `STOP` aux rôles déjà lancés, et
-   propose un seul worker (sous-agent) qui enchaîne les tâches.
-   Montre ce découpage à l'utilisateur et continue sans attendre, sauf `separable: false` ou si
-   le lancement attend encore son feu vert (`equipe.md`, étape 4).
-2. **Implémentation** (1 worker par tâche, `isolation: 'worktree'`) : chaque worker ne modifie que
-   ses fichiers, écrit ou adapte les tests de son morceau, les exécute, **committe** dans son
-   worktree et rend un `CHANGESET` (branche, commit, fichiers touchés, tests lancés et résultat).
-   Un agent qui a besoin de toucher un fichier hors de sa liste s'arrête et le signale dans
-   `blocked_on`, il ne le modifie pas.
-   Un worker peut s'appuyer sur un **tester** (§6) pour les tests dans le navigateur.
-3. **Intégration** (le **merger**, §6 ; `isolation: 'worktree'` lui aussi, pour ne jamais
-   déplacer le HEAD ni toucher le checkout de l'utilisateur) : crée une branche d'intégration
-   depuis la branche de départ, y merge les branches des `CHANGESET` une par une, résout les
-   conflits triviaux, lance la suite de tests complète et le lint. Rend un `INTEGRATION`.
-4. **Vérification** (le **checker**, §6, et 1 relecteur si le diff est gros) : le checker teste
-   les fonctionnalités mergées pour de vrai, contre l'Eval de chaque tâche ; le relecteur relit
-   le diff d'intégration contre les contrats (patron 2 réduit).
-5. **Rapport** : pas de texte à synthétiser ici ; tu rapportes l'état (branche, tests, revue,
+1. **Contrats** (1 agent, sans isolation, lecture seule) : il fixe les interfaces entre
+   morceaux (signatures, types, formats d'échange), découpe en tâches et donne à chacune une
+   liste de fichiers **disjointe**. Rend un `CONTRACT_PLAN`. Fichier partagé incontournable ou
+   couplage fort → `separable: false` et **le swarm s'arrête** : `STOP` aux rôles déjà lancés,
+   et propose un seul worker (sous-agent) qui enchaîne les tâches. Sinon, montre ce découpage
+   à l'utilisateur et continue sans attendre, sauf si le lancement attend encore son feu vert
+   (`equipe.md`, étape 4).
+2. **Implémentation** (1 worker par tâche, `isolation: 'worktree'`) : il ne modifie que ses
+   fichiers, écrit ou adapte ses tests, les exécute, **committe** sur sa branche
+   `swarm-<slug>-<tâche>` et rend un `CHANGESET` (branche, commit, fichiers touchés, tests
+   lancés et résultat). Besoin d'un fichier hors de sa liste : il s'arrête et le signale dans
+   `blocked_on`, sans le modifier. Un **tester** (§6) peut tester pour lui dans le navigateur.
+3. **Intégration** : le **merger** (§6), en worktree lui aussi, pour ne jamais déplacer le
+   HEAD ni toucher le checkout de l'utilisateur. Rend un `INTEGRATION`.
+4. **Vérification** : le **checker** (§6) teste le résultat mergé contre l'Eval de chaque
+   tâche ; si le diff est gros, 1 relecteur le relit contre les contrats (patron 2 réduit).
+5. **Rapport** : pas de texte à synthétiser ; tu rapportes l'état (branche, tests, revue,
    restes).
 
-Un **reproducer** (§6) peut tourner pendant tout le run : quand une partie de l'app casse, il
-reproduit le bug et propose un correctif.
+Un **reproducer** (§6) peut tourner pendant le run.
 
-**Une PR par worker** → file de merge (`flux.md` §1), sans merger. Le merger ne sert que si
-les branches doivent être testées ensemble avant toute PR.
+**Une PR par worker** (avec l'accord de l'utilisateur) → file de merge (`flux.md` §1), sans
+merger. « Les PR » de SKILL.md s'applique ; ajoute au brief la règle « PR » de `brief.md`
+(sous-agent ou session) : la ligne `PRÊT À MERGER — <URL>` passe avant `FAIT`.
 
-**Redondance** : rare. Seulement pour une pièce petite et critique (algorithme délicat) : deux
-implémentations avec des approches différentes, départagées par les tests et une revue.
-Sinon la redondance est dans la vérification : tests + revue.
+**Redondance** : rare. Pour une pièce petite et critique (algorithme délicat) : deux
+implémentations aux approches différentes, départagées par les tests et une revue.
 
-**Vérification** : les tests passent sur la branche d'intégration. Une revue d'agent ne remplace
-jamais un test qui échoue.
+**Vérification** : les tests passent sur la branche d'intégration. Une revue d'agent ne
+remplace jamais un test qui échoue.
 
-**Livrable par défaut** : branche d'intégration + diff + sortie des tests. Pas de merge dans la
-branche principale, pas de push, pas de PR sans accord explicite.
+**Livrable par défaut** : branche d'intégration + diff + sortie des tests. Pas de merge dans
+la branche principale ni dans le checkout de l'utilisateur, pas de push, pas de PR sans accord
+explicite.
 
 **Pièges**
 
-- Un worktree sans changement est supprimé automatiquement : un agent qui n'a rien committé ne
-  laisse rien à intégrer ; son `CHANGESET` doit le dire.
-- Les agents isolés ne voient pas les fichiers non commités du checkout principal : committe ou
-  passe dans le prompt ce dont ils ont besoin.
-- Les dépendances entre tâches (B utilise le module de A) se gèrent par le contrat (interface
-  fixée en vague 1), pas en faisant attendre B sur A. Si B a vraiment besoin du code de A,
-  ce sont deux vagues distinctes, ou une seule tâche.
-
----
+- Un worktree sans changement est supprimé : un agent qui n'a rien committé ne laisse rien à
+  intégrer ; son `CHANGESET` doit le dire.
+- Les agents isolés ne voient pas les fichiers non commités du checkout principal : committe,
+  ou passe dans le prompt ce dont ils ont besoin.
+- Une dépendance entre tâches (B utilise le module de A) se gère par le contrat (interface
+  fixée en vague 1), pas en faisant attendre B. Si B a vraiment besoin du code de A : deux
+  vagues, ou une seule tâche.
 
 ## 5. Goal ouvert — « apporteurs, exécutants, rédacteurs »
 
-**Quand** : le goal est une **collection qui peut grandir** : une doc de questions (« qu'est-ce
-qui se passe quand je fais X ? »), une FAQ, des cas de test, des points d'audit, des pages à
-écrire. Ce patron **s'ajoute** à la famille retenue : les exécutants suivent ses règles de
-vérification (une doc de questions suit en général le patron 1, recherche).
+Pour un goal ouvert (`equipe.md`, étapes 1 et 2), ex. une doc « qu'est-ce qui se passe quand
+je fais X ? ». Ce patron **s'ajoute** à la famille retenue, dont la redondance et la
+vérification portent sur la **matière**, avant la rédaction. Goal fermé : le plan s'en passe,
+et le dit : `Apporteurs : aucun — <raison>`.
 
-Hors de ce cas (goal fermé : un bug, une décision), le plan peut s'en passer, mais il le dit :
-`Apporteurs : aucun — <raison>`.
+Chaque rôle a son bloc pour le brief d'équipe (`team-mode.md`, « Brief d'équipe »), dont
+cette fin remplace la partie « Fin » :
 
-**Le goal, comme filtre** (en tête de `plan.md` et de chaque brief) :
+```
+Fin : tu ne finis PAS après un sujet. Après chaque sujet, attends le suivant.
+Tu finis seulement quand le coordinateur t'envoie "STOP" : alors écris
+~/.claude/swarm-runs/<slug>/<nom>.json (sujets traités, chemins, points ouverts, "echanges"),
+puis termine par une seule ligne : "FAIT <chemin>" ou "ÉCHEC <raison>".
+```
 
-- une phrase : à quoi sert le travail, pour qui ;
-- 2 à 3 exemples de sujets qui le remplissent (souvent ceux donnés par l'utilisateur) ;
-- ce qui **n'est pas** un sujet (ex. « comment installer » : une procédure, pas une conséquence).
+**Apporteurs de sujets** (1 à 2, un angle chacun : ex. l'un lit le code, l'autre les tickets,
+Slack et la doc existante). Un sujet reformulé est un doublon.
 
-**Rôles**
+```
+Ton rôle : apporteur de sujets. Angle : <code | tickets et Slack | doc existante | …>.
+Tu cherches d'autres sujets du même type que les exemples du goal. Tu ne traites aucun sujet.
+Envoie au coordinateur des lots de 5 sujets au plus, message "SUJETS — <n> sujets", au schéma
+SUJET (sujet, pourquoi il remplit le goal, où tu l'as vu). Avant chaque lot, filtre avec le goal
+et retire les doublons de ~/.claude/swarm-runs/<slug>/sujets.md (que tu lis, sans l'écrire).
+Attends la réponse du coordinateur avant le lot suivant. Si tu ne trouves plus rien :
+"RIEN DE NOUVEAU". Avancement : sujets acceptés / budget (<N>).
+```
 
-1. **Apporteurs de sujets** (1 à 2, chacun avec un angle différent : ex. l'un lit le code pour
-   trouver les actions qui ont des effets, l'autre lit tickets, Slack et doc existante pour trouver
-   les questions déjà posées ou sans réponse). Ils cherchent **d'autres sujets du même type** que
-   les exemples du goal. Ils ne traitent jamais un sujet.
-   - Ils proposent par **lots de 5 au plus**, au coordinateur, message `SUJETS`, au schéma `SUJET`
-     de `schemas.md` (le sujet, pourquoi il remplit le goal, où ils l'ont vu).
-   - Avant d'envoyer, ils filtrent eux-mêmes avec le goal et retirent les doublons de
-     `sujets.md` (même sujet reformulé = doublon).
-   - Ils attendent la réponse du coordinateur avant le lot suivant (elle leur apprend ce qui
-     est accepté, et pourquoi le reste ne l'est pas).
-   - S'ils ne trouvent plus rien : message `RIEN DE NOUVEAU`.
-2. **Coordinateur** (toi) : **seul** à écrire `sujets.md` (id stable `s-01`, `s-02`…, statut :
-   proposé, accepté, refusé + raison, en cours <nom>, matière prête, rédigé). Tu acceptes ou
-   refuses chaque sujet selon le goal, tu donnes chaque sujet accepté à un exécutant libre
-   (message `SUJET`), et tu tiens le budget de sujets.
-3. **Exécutants** (le gros de l'équipe) : un sujet à la fois. Ils cherchent, tracent,
-   reproduisent, prouvent, selon les règles de la famille. Ils **ne rédigent pas** : pas de
-   compte rendu, pas de prose. Ils écrivent la matière brute dans
-   `~/.claude/swarm-runs/<slug>/matiere/<id>.json` (schéma `MATIERE` : faits, preuves, commandes,
-   sources, points ouverts), envoient `MATIÈRE — <id>` à leur rédacteur, puis `LIBRE — <id>` au
-   coordinateur, et attendent le sujet suivant.
-4. **Rédacteurs** (possibles, pas obligatoires : `equipe.md`, étape 3) : ils transforment la
-   matière en texte, au format du livrable fixé au plan (une fiche par sujet, un CR…), dans
-   `~/.claude/swarm-runs/<slug>/livrable/<id>.md`. Ils n'inventent rien : un trou ou un doute →
-   `QUESTION` à l'exécutant qui a fourni la matière. Puis `RÉDIGÉ — <id>` au coordinateur.
-   Le premier rédacteur (`redac-1`) est aussi **rédacteur en chef** : il fixe le style commun au
-   début et assemble le livrable final à la fin.
+**Exécutants** (le gros de l'équipe).
 
-**Boucle et arrêt**
+```
+Ton rôle : exécutant. Le coordinateur t'envoie un sujet à la fois (message "SUJET — <id>").
+Pour chaque sujet : <méthode de la famille : tracer dans le code, reproduire, sourcer…>.
+Tu ne rédiges pas : pas de compte rendu, pas de prose. Écris la matière brute dans
+~/.claude/swarm-runs/<slug>/matiere/<id>.json au schéma MATIERE (faits, preuves, commandes,
+points ouverts, confiance). Puis envoie "MATIÈRE — <id> <chemin>" à <rédacteur>, et
+"LIBRE — <id>" au coordinateur. Réponds aux QUESTION du rédacteur.
+Avancement : sujets finis / sujets reçus.
+```
+
+**Rédacteurs** (possibles, pas obligatoires : `equipe.md`, étape 3).
+
+```
+Ton rôle : rédacteur, pour <exécutant-1>, <exécutant-2>. Format d'une fiche : <format fixé>.
+Pour chaque "MATIÈRE — <id>" reçu : lis la matière et écris la fiche dans
+~/.claude/swarm-runs/<slug>/livrable/<id>.md. N'invente rien : un trou ou un doute → QUESTION à
+l'exécutant qui a fourni la matière. Puis "RÉDIGÉ — <id>" au coordinateur.
+[redac-1 seulement] Tu es rédacteur en chef : au début, écris le style commun dans
+livrable/STYLE.md ; après le STOP, assemble le livrable final dans livrable/INDEX.md.
+Avancement : fiches rédigées / matières reçues.
+```
+
+**Toi, le coordinateur** : tu es le **seul** à écrire `sujets.md` (id stable `s-01`, `s-02`… ;
+statut : proposé, accepté, refusé + raison, en cours <nom>, matière prête, rédigé). À chaque
+`SUJETS`, accepte ou refuse chaque sujet selon le goal (hors goal, même intéressant : refusé,
+avec la raison), donne-lui un id, réponds à l'apporteur, et donne chaque sujet accepté à un
+exécutant libre (`SUJET`). Tu tiens le budget de sujets.
 
 - Tous les rôles démarrent **dans la vague 1**. Les sujets circulent par messages vers les
   agents qui tournent déjà ; jamais « un agent par sujet ».
-- Personne ne finit après un sujet : il attend le suivant. `FAIT` n'arrive qu'après un `STOP`.
-- Arrêt quand : le **budget de sujets** est atteint, ou les apporteurs ont dit deux fois
-  `RIEN DE NOUVEAU`, ou l'utilisateur dit stop. Tu envoies alors `STOP` à chacun : apporteurs et
-  exécutants écrivent leur `<nom>.json` et finissent ; les rédacteurs finissent leurs fiches en
-  cours, `redac-1` assemble le livrable, puis ils finissent.
-
-**Avancement** (panneau Swarm) : exécutants et rédacteurs = sujets finis / sujets reçus ;
-apporteurs = sujets acceptés / budget de sujets.
-
-**Exemple** — doc « qu'est-ce qui se passe quand je fais X ? » : 2 apporteurs (code ; tickets
-et Slack), 3 exécutants qui tracent chaque action dans le code et la reproduisent si possible,
-1 rédacteur qui écrit une fiche par question au même format (la question, ce qui se passe étape
-par étape, les effets visibles, les pièges). Total 6 agents, budget 20 sujets.
-
-**Redondance et vérification** : celles de la famille, portées sur la **matière** (avant la
-rédaction). Un vérificateur peut relire quelques fiches contre leur matière, pour attraper ce que
-la rédaction a déformé.
-
-**Pièges**
-
-- Le même sujet reformulé deux fois : dédoublonne avec l'id, pas avec le texte.
-- La dérive hors goal : un sujet intéressant mais hors goal est refusé, avec la raison.
-- Le rédacteur qui comble un trou par une supposition : il demande, il ne devine pas.
-- Le mode rapide (`Workflow`) ne fait pas de boucle ouverte : là, le patron devient trois
-  phases fermées (apporteurs jusqu'au budget, puis exécutants, puis rédacteurs).
-
----
+- Arrêt quand le **budget de sujets** est atteint, ou après deux `RIEN DE NOUVEAU`, ou sur
+  stop de l'utilisateur : `STOP` à chacun. Apporteurs et exécutants écrivent leur `<nom>.json`
+  et finissent ; les rédacteurs finissent leurs fiches en cours, `redac-1` assemble le
+  livrable, puis ils finissent. `FAIT` n'arrive qu'après un `STOP`.
+- Un vérificateur peut relire quelques fiches contre leur matière.
+- Le mode rapide (`Workflow`) ne fait pas de boucle ouverte : trois phases fermées
+  (apporteurs jusqu'au budget, puis exécutants, puis rédacteurs).
 
 ## 6. Rôles spécialisés — merger, checker, tester, reproducer, watchdog
 
-Ils s'ajoutent au **router** (toi) et aux **workers**. Chacun a un seul métier, et aucun ne parle
-à l'utilisateur. **Un rôle de soutien se prend sur un besoin écrit dans le plan**, pas sur un
-seuil automatique : chacun compte dans le total d'agents.
+Chacun a un seul métier, ne parle pas à l'utilisateur, et compte dans le total d'agents. **Un
+rôle se prend sur un besoin écrit dans le plan**, pas sur un seuil automatique. Tu ne fais
+aucun de ces métiers.
 
-| Rôle | Son métier | Le besoin qui le justifie | Rend |
-|---|---|---|---|
-| **Worker** | Fait une tâche, et une seule à la fois, dans son propre contexte. | Toujours : c'est le gros de l'équipe. | le schéma de la famille (`FINDING`, `HYPOTHESIS`, `CHANGESET`, `MATIERE`) |
-| **Merger** | Rassemble les branches des workers sur une branche d'intégration, résout les conflits triviaux, lance les tests et le lint. Ne pousse rien. | Les branches doivent être testées ensemble avant toute PR. Une PR par worker → file de merge (`flux.md` §1), sans merger. | `INTEGRATION` |
-| **Checker** | Vérifie le résultat **mergé**, pour de vrai, contre l'Eval de chaque tâche : il lance l'app, ouvre le navigateur, rejoue chaque vérification. Pour la recherche et l'audit, c'est le vérificateur qui relit la source primaire. | Un résultat à accepter que tu ne peux pas vérifier toi-même en rejouant 1 à 3 commandes. | `VERDICT` par tâche |
-| **Tester** | Teste au fil de l'eau pour les workers, avant le merge : tests dans le navigateur, cas limites. Il dit au worker ce qui ne marche pas. | Une interface ou des parcours à cliquer que les workers ne peuvent pas tester eux-mêmes. | `VERDICT` |
-| **Reproducer** | Quand quelque chose casse pendant le run, il rejoue les étapes jusqu'à voir le bug, trouve la cause, et, si le correctif est petit, le fait sur sa propre branche. Sinon, il rend un rapport. | Un bug à reproduire, ou un run long sur une app qu'on peut lancer en local. À lancer quand le besoin apparaît (sous-agent), pas d'avance. | `HYPOTHESIS` (cause et preuve) et, s'il corrige, `CHANGESET` |
-| **Watchdog** | Surveille les signes de vie des autres sessions : une session muette depuis trop longtemps, qui tourne en rond, ou deux sessions qui s'attendent. Il prévient le router. Il ne corrige rien et n'archive rien. | Le seul cas écrit dans « Seuils » (SKILL.md). | des messages `ALERTE` ; à la fin, un rapport des alertes |
+| Rôle | Le besoin qui le justifie | Rend |
+|---|---|---|
+| **Merger** (l'« intégrateur » du §4) | Les branches doivent être testées ensemble avant toute PR. | `INTEGRATION` |
+| **Checker** (aux §1 et §2 : le « vérificateur » ou « contre-expert ») | Un résultat à accepter que tu ne peux pas vérifier toi-même en rejouant 1 à 3 commandes. | `VERDICT` par tâche |
+| **Tester** (au fil de l'eau, avant le merge) | Une interface ou des parcours à cliquer que les workers ne peuvent pas tester eux-mêmes. | `VERDICT` |
+| **Reproducer** | Un bug à reproduire, ou un run long sur une app qu'on peut lancer en local. À lancer quand le besoin apparaît (sous-agent), pas d'avance. | `HYPOTHESIS` (cause et preuve) et, s'il corrige, `CHANGESET` |
+| **Watchdog** | Le seul cas écrit dans « Seuils » (SKILL.md). Brief : `sessions-mode.md`, « Watchdog ». | des messages `ALERTE` ; à la fin, un rapport des alertes |
 
-**Différence avec les rôles déjà là** : le merger est l'« intégrateur » du §4, le checker est le
-« vérificateur » ou le « contre-expert » des §1 et §2. Les noms courts servent à fixer leur
-métier ; leurs règles ne changent pas.
+Les workers, eux, rendent le schéma de la famille (`FINDING`, `HYPOTHESIS`, `CHANGESET`,
+`MATIERE`).
 
-**Règles communes**
+Lance ces rôles dans la même vague que les workers : ils attendent leur premier message.
+Exception : le reproducer, lancé quand un bug arrive. Checker et tester cherchent ce qui ne
+marche pas, pas à confirmer. Leurs blocs, pour le brief d'équipe :
 
-- **Le router ne fait aucun de ces métiers lui-même.** Il lance les rôles, lit leurs résultats,
-  et tranche.
-- **Ordre en fin de tâche (code, avec merger)** : worker « tout est commité » → merger →
-  checker. Un échec du checker repart **au worker de la tâche** (`À CORRIGER — <tâche>`), avec
-  la vérification qui échoue, puis repasse par le merger et le checker.
-- **Le checker et le tester sont promptés pour trouver ce qui ne marche pas**, pas pour
-  confirmer. Une vérification qu'ils n'ont pas pu rejouer est « non vérifiée », jamais « OK ».
-- **Le reproducer ne touche pas aux branches des workers.** Son correctif est une branche à
-  lui, que le merger intègre comme les autres (ou une PR à lui).
-- **Le watchdog est bon marché** : modèle le moins cher, effort `low`, contexte court. Il ne
-  lit pas le travail des autres, seulement leurs signes de vie. Sa source est `sessions` (les
-  outils de sessions) par défaut ; le dossier `view/` du mod swarm-view seulement s'il contient
-  déjà un fichier. Son brief est dans `sessions-mode.md` (« Watchdog »).
+**Merger**
 
-**Exemple (code, 3 tâches)** : router (toi) ; 3 workers sur leurs branches ; 1 merger (les 3
-branches doivent être testées ensemble) ; 1 checker qui teste dans le navigateur. Total 5
-agents. Pas de watchdog (« Seuils »), pas de reproducer tant qu'aucun bug n'est à reproduire.
+```
+Ton rôle : merger. Tu travailles dans ton propre worktree. Quand le router t'écrit
+"À INTÉGRER — <branches>", crée (ou reprends) la branche swarm-<slug>-integration depuis <branche de
+départ>, merge chaque branche par son nom complet refs/heads/…, une par une. Conflit trivial :
+résous-le. Conflit de fond : n'invente rien, écris au worker concerné et au router.
+Puis lance les tests et le lint : <commandes>. Ne pousse rien, ne merge pas dans la branche
+principale. Écris le résultat au schéma INTEGRATION, puis "INTÉGRÉ — <résumé>" au router.
+Tu ne finis pas après un merge : attends le suivant, jusqu'au STOP.
+```
+
+**Checker**
+
+```
+Ton rôle : checker. Quand le router t'écrit "À VÉRIFIER — <tâches>", prends la branche
+d'intégration, lance l'app (<commande>), et rejoue chaque vérification de l'Eval de chaque
+tâche (dans ~/.claude/swarm-runs/<slug>/plan.md), pour de vrai, dans le navigateur si besoin.
+Ton but est de trouver ce qui ne marche pas. Une vérification que tu n'as pas pu rejouer est
+"non vérifiée", jamais OK. Capture d'écran pour chaque vérification, dans le dossier d'échange.
+Rends un VERDICT par tâche, puis "VÉRIFIÉ — <n> OK, <n> KO, <n> non vérifiées" au router.
+Attends la vérification suivante, jusqu'au STOP.
+```
+
+**Tester**
+
+```
+Ton rôle : tester, pour <worker-1>, <worker-2>, <worker-3>. Quand un worker t'écrit
+"À TESTER — <tâche> <branche>", lance l'app sur sa branche (dans ton worktree), teste les
+parcours et les cas limites de l'Eval de sa tâche dans le navigateur. Réponds au worker :
+"VÉRIFIÉ — <tâche> OK" ou "À CORRIGER — <tâche> : <ce qui casse, comment le rejouer>".
+Tu ne corriges pas le code toi-même.
+```
+
+**Reproducer**
+
+```
+Ton rôle : reproducer. Quand quelqu'un t'écrit "BUG — <symptôme>", rejoue les étapes jusqu'à
+voir le bug (navigateur, commandes, tests). Trouve la cause, avec une preuve.
+- Correctif petit et sûr : fais-le sur ta branche swarm-fix-<bug>, ajoute un test qui échouait
+  avant, committe, puis "CORRIGÉ — <bug> <branche>" au router (le merger l'intégrera).
+- Sinon : "BUG — <bug> : cause, preuve, correctif proposé" au router.
+Ne touche jamais aux branches des workers. Bug impossible à reproduire : dis-le.
+Attends le bug suivant, jusqu'au STOP.
+```
+
+**Ordre en fin de tâche (code, avec merger)** : worker « tout est commité » → merger →
+checker. Un échec du checker repart **au worker de la tâche** (`À CORRIGER — <tâche>`), avec
+la vérification qui échoue, puis repasse par le merger et le checker. Le correctif du
+reproducer est une branche à lui, que le merger intègre comme les autres (ou une PR à lui).

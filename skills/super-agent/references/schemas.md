@@ -1,6 +1,6 @@
 # Schémas communs — le contrat de communication
 
-Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et applique `SKILL.md` seul.
+Version 2.0.0.
 
 Chaque agent rend un objet validé via l'option `schema` de `agent()`. Ces schémas sont le seul
 canal entre agents : une vague reçoit les sorties de la précédente dans son prompt (JSON) ou via

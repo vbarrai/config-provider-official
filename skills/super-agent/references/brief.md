@@ -1,35 +1,31 @@
 # Brief du worker
 
-Version 2.0.0 — la même que `SKILL.md`. Sinon, dis-le en une ligne et applique `SKILL.md` seul.
+Version 2.0.0.
 
-Le `prompt` de tout worker lancé par le router, sous-agent (`Agent`) ou session
-(`start_session`). Lis ce fichier une fois, au premier lancement ; remplis les `<…>` à chaque
-tâche ; ne retire aucune règle, sauf la règle « PR » quand la tâche n'a pas de PR.
+Le `prompt` de tout worker, sous-agent (`Agent`) ou session (`start_session`). Lis ce fichier
+une fois, au premier lancement ; remplis les `<…>` à chaque tâche ; ne retire aucune règle, sauf
+la règle « PR » quand la tâche n'a pas de PR.
 
-- La première ligne est `WORKER <name>`, exactement : c'est à elle qu'un worker se reconnaît
-  (SKILL.md, « Quand tu ne délègues pas »).
-- U1, U2 et la règle du hook sont recopiées mot pour mot dans les briefs d'équipe
-  (`sessions-mode.md`, `team-mode.md`) ; U1 et U2 viennent de SKILL.md (« Router et workers »,
-  « Flux autonome »). Modifie les copies ensemble.
-- Ligne « Livraison » : dis où le résultat doit arriver. Sans branche ni PR, le worker écrit
-  dans le dossier de l'utilisateur (SKILL.md, « Le cycle d'une tâche », étape 2, « Isolation »).
-  La tâche part du travail non commité de l'utilisateur et finit en PR : il travaille dans ce
-  dossier, crée la branche sur place, et le dit dans son rapport.
+- La première ligne est `WORKER <name>`, exactement : un worker se reconnaît à elle.
+- U1, U2 et la règle du hook : ce gabarit est leur seule copie pour les workers. Le brief
+  d'équipe (`team-mode.md`) les recopie d'ici, mot pour mot. U1 et U2 sont ceux de SKILL.md :
+  modifie-les ensemble.
+- « Livraison » : où le résultat doit arriver (SKILL.md, « Le cycle d'une tâche », étape 2,
+  « Isolation »). Départ du travail non commité de l'utilisateur, avec une PR : dis au worker
+  de créer la branche sur place et de le dire dans son rapport.
 - Sous-agent qui crée son worktree à la main (autre dépôt, branche existante, session hors d'un
   dépôt git) : écris dans « Livraison » le chemin du dépôt et la commande qui convient :
   - branche existante, pas sortie ailleurs : `git worktree add <chemin> <branche>` ;
   - branche nouvelle : `git worktree add -b <branche> <chemin> <base>` ;
   - branche déjà sortie dans le dossier de l'utilisateur (git répond « is already used by
-    worktree ») : une nouvelle branche partie d'elle,
-    `git worktree add -b <branche>-<tâche> <chemin> <branche>`. Le travail non commité de
-    l'utilisateur n'est pas dans cette nouvelle branche. Avec une PR : elle vise `<branche>`
-    (base = la branche de l'utilisateur). Sans PR : le worker demande dans son rapport, en une
-    ligne, de merger `<branche>-<tâche>` dans `<branche>`.
-- Règle « PR » : garde une seule des deux façons d'attendre la CI, selon que le worker est un
-  sous-agent ou une session. Dépôt sans CI connu d'avance : écris-le dans « Décidé ».
+    worktree ») : `git worktree add -b <branche>-<tâche> <chemin> <branche>`. Le travail non
+    commité de l'utilisateur n'y est pas. Avec une PR : elle vise `<branche>`. Sans PR : le
+    worker demande dans son rapport, en une ligne, de merger `<branche>-<tâche>` dans `<branche>`.
+- Règle « PR » : garde une seule des deux façons d'attendre la CI (sous-agent ou session).
+  Dépôt sans CI connu d'avance : écris-le dans « Décidé ».
 - Plusieurs PR sur la même base : ajoute aux Règles le bloc de `flux.md` §4 (rebase).
-- « Durée attendue » : ton estimation. Un worker qui la double t'écrit ; décide alors de le
-  laisser finir, de préciser la tâche, ou de l'arrêter (`STOP`).
+- « Durée attendue » : ton estimation. Un worker qui la double t'écrit : laisse-le finir,
+  précise la tâche, ou arrête-le (`STOP`).
 
 ```
 WORKER <name>
