@@ -12,6 +12,7 @@ npx maconfai install vbarrai/config-provider-official
 
 | Skill | Description |
 |-------|-------------|
+| `maconfai-cli` | Run the `maconfai` CLI on the user's behalf: install skills, MCP servers and hooks from a repo or a local folder, show what is installed (`status`), add or remove one item without prompts, update, manage trust, uninstall, and diagnose refusals. Says which commands write to disk, when to ask the user first, and which ones need a maconfai newer than 0.6.0. |
 | `maconfai-author` | Author and publish skills, MCP servers, and hooks in a maconfai-compatible distribution repo. Covers file layout, naming rules, hook event mappings (Claude Code ↔ Cursor), MCP env-syntax translation, and registry-style remote skill references. |
 | `super-agent` | Default strategy for any "do something" request: the agent becomes a router that splits the work into ordered tasks (What + Eval), hands them to worker sessions, checks each result against its Eval, and only comes back to the user for decisions. Written in French; relies on Claude Code desktop session tools. |
 | [`skill-creator`](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator) | Create new skills, modify and improve existing skills, and measure skill performance. Remote reference — fetched from `anthropics/claude-plugins-official`. |
