@@ -1,210 +1,214 @@
-# Squelettes de scripts Workflow
+# Workflow script skeletons
 
-Un squelette par patron de `topologies.md`. Ce sont des points de départ : remplace les `<…>`,
-ajuste le nombre d'agents au plan **validé**, et colle les schémas de `schemas.md` en tête.
+One skeleton per pattern in `topologies.md`: a starting point. Adjust the number of agents to
+the plan **shown to the user**, and paste the schemas from `schemas.md` at the top.
 
-Rappels de l'API (détail dans le skill `workflow-authoring`) :
+API reminders (details in the `workflow-authoring` skill):
 
-- `meta` est un littéral pur ; ses `phases` reprennent exactement les titres de `phase()`.
-- JavaScript pur ; pas de `Date.now()`, `Math.random()`, `new Date()` : passe ce qui varie via `args`.
-- `agent()` rend `null` en cas d'échec : filtre avec `.filter(Boolean)` et **compte** les trous.
-- `pipeline()` par défaut ; `parallel()` seulement quand une étape a besoin de tous les résultats.
-- `log()` tout ce qui est écarté ou tronqué.
+- `meta` is a pure literal; its `phases` repeat exactly the `phase()` titles.
+- Plain JavaScript; no `Date.now()`, `Math.random()`, `new Date()`: pass what varies via `args`.
+- `agent()` returns `null` on failure: filter with `.filter(Boolean)` and **count** the gaps.
+- `pipeline()` by default; a `parallel()` barrier only when a step needs **all** the previous
+  results (deduplication, synthesis, cross-refutation).
+- `log()` everything that is dropped or truncated.
+- Each `agent()` prompt starts with `WORKER <id>`, like every worker brief in the skill, and says not
+  to invoke the super-agent skill: the skeletons pass their prompts through the
+  `worker(id, prompt)` wrapper, to paste at the top of the script:
+  ``const worker = (id, p) => `WORKER ${id}\nYou are a worker: launch no agent and do not invoke the super-agent skill.\n${p}`;``
 
-Le premier argument `args` de chaque template contient le plan validé (tâches, angles,
-hypothèses…), pour que le script ne réinvente rien.
+`args` holds the plan shown (tasks, angles, hypotheses…): the script reinvents nothing.
 
 ---
 
-## 1. Recherche / analyse
+## 1. Research / analysis
 
 ```js
 export const meta = {
   name: 'swarm-research',
-  description: 'super-agent : exploration parallèle par sous-question, vérification des constats clés, synthèse',
-  phases: [{ title: 'Explorer' }, { title: 'Vérifier' }, { title: 'Synthétiser' }],
+  description: 'super-agent: parallel exploration per sub-question, checking of key findings, synthesis',
+  phases: [{ title: 'Explore' }, { title: 'Check' }, { title: 'Synthesize' }],
 }
 // args = { question, criterion, subquestions: [{ id, prompt, angle }], verify_max, deliverable }
 
 const explored = await pipeline(
   args.subquestions,
   sq => agent(
-    `Question générale : ${args.question}\n` +
-    `Ta sous-question : ${sq.prompt}\nAngle imposé : ${sq.angle}\n` +
-    `Rends des constats sourcés. Cite la source primaire, pas une reprise. ` +
-    `Liste dans not_covered ce que tu n'as pas pu examiner.`,
-    { label: `explorer:${sq.id}`, phase: 'Explorer', schema: FINDING },
+    worker(`explorer:${sq.id}`, `Overall question: ${args.question}\n` +
+    `Your sub-question: ${sq.prompt}\nRequired angle: ${sq.angle}\n` +
+    `Return sourced findings. Cite the primary source, not a copy. ` +
+    `List in not_covered what you could not examine.`),
+    { label: `explorer:${sq.id}`, phase: 'Explore', schema: FINDING },
   ),
 )
 const ok = explored.filter(Boolean)
-if (ok.length < args.subquestions.length) log(`${args.subquestions.length - ok.length} exploration(s) en échec`)
+if (ok.length < args.subquestions.length) log(`${args.subquestions.length - ok.length} exploration(s) failed`)
 
-// Barrière justifiée : on choisit les constats clés parmi tous.
+// Justified barrier: the key findings are chosen among all of them.
 const all = ok.flatMap(r => r.findings)
-const key = all.filter(f => f.confidence !== 'haute' || f.severity === 'critique').slice(0, args.verify_max)
-if (all.length > key.length) log(`${all.length - key.length} constat(s) non vérifiés (hors budget ou confiance haute)`)
+const key = all.filter(f => f.confidence !== 'high' || f.severity === 'critical').slice(0, args.verify_max)
+if (all.length > key.length) log(`${all.length - key.length} finding(s) not checked (over budget or high confidence)`)
 
 const verdicts = await parallel(key.map(f => () => agent(
-  `Essaie de RÉFUTER ce constat en relisant ses sources primaires.\n${JSON.stringify(f)}\n` +
-  `refuted=true si la source ne le soutient pas ou si tu ne peux pas le confirmer.`,
-  { label: `verifier:${f.id}`, phase: 'Vérifier', schema: VERDICT },
+  worker(`verifier:${f.id}`, `Try to REFUTE this finding by rereading its primary sources.\n${JSON.stringify(f)}\n` +
+  `refuted=true if the source does not support it or if you cannot confirm it.`),
+  { label: `verifier:${f.id}`, phase: 'Check', schema: VERDICT },
 )))
 
-phase('Synthétiser')
+phase('Synthesize')
 const report = await agent(
-  `Synthétise pour répondre à : ${args.question} (critère de fin : ${args.criterion}).\n` +
-  `Format : ${args.deliverable}.\nRègle de fusion : accord → retenu ; désaccord → exposer les deux ` +
-  `positions ; isolé non vérifié → "non confirmé" ; réfuté → annexe ; lister les trous.\n` +
-  `Constats : ${JSON.stringify(ok)}\nVerdicts : ${JSON.stringify(verdicts.filter(Boolean))}`,
-  { label: 'synthese', phase: 'Synthétiser' },
+  worker('synthesis', `Synthesize to answer: ${args.question} (end criterion: ${args.criterion}).\n` +
+  `Format: ${args.deliverable}.\nMerge rule: agreement → kept; disagreement → lay out both ` +
+  `positions; isolated unchecked → "unconfirmed"; refuted → appendix; list the gaps.\n` +
+  `Findings: ${JSON.stringify(ok)}\nVerdicts: ${JSON.stringify(verdicts.filter(Boolean))}`),
+  { label: 'synthesis', phase: 'Synthesize' },
 )
 return { report, explored: ok, verdicts, failed: args.subquestions.length - ok.length }
 ```
 
 ---
 
-## 2. Audit / revue
+## 2. Audit / review
 
 ```js
 export const meta = {
   name: 'swarm-audit',
-  description: 'super-agent : revue par angles, dédoublonnage, contre-expertise des constats graves, synthèse',
-  phases: [{ title: 'Revue' }, { title: 'Contre-expertise' }, { title: 'Synthèse' }],
+  description: 'super-agent: review by angles, deduplication, counter-expertise of serious findings, synthesis',
+  phases: [{ title: 'Review' }, { title: 'Counter-expertise' }, { title: 'Synthesis' }],
 }
 // args = { target, context, lenses: [{ id, prompt }], counter_lenses: [string], verify_max }
 
 const reviews = await parallel(args.lenses.map(l => () => agent(
-  `Objet à auditer : ${args.target}\nContexte : ${args.context}\n` +
-  `Ton angle, et seulement lui : ${l.prompt}\n` +
-  `Chaque constat a une localisation précise et une preuve.`,
-  { label: `revue:${l.id}`, phase: 'Revue', schema: FINDING },
+  worker(`review:${l.id}`, `Object to audit: ${args.target}\nContext: ${args.context}\n` +
+  `Your angle, and only that one: ${l.prompt}\n` +
+  `Each finding has a precise location and evidence.`),
+  { label: `review:${l.id}`, phase: 'Review', schema: FINDING },
 )))
-// Barrière justifiée : dédoublonnage sur l'ensemble.
+// Justified barrier: deduplication over the whole set.
 const seen = new Map()
 for (const f of reviews.filter(Boolean).flatMap(r => r.findings)) {
   const k = `${f.location}|${f.claim.slice(0, 60)}`
   if (!seen.has(k)) seen.set(k, f)
 }
 const unique = [...seen.values()]
-const grave = unique.filter(f => f.severity === 'critique' || f.severity === 'majeur').slice(0, args.verify_max)
-log(`${unique.length} constats uniques, ${grave.length} en contre-expertise`)
+const grave = unique.filter(f => f.severity === 'critical' || f.severity === 'major').slice(0, args.verify_max)
+log(`${unique.length} unique findings, ${grave.length} in counter-expertise`)
 
 const verified = await pipeline(grave, (f, _, i) => agent(
-  `Essaie de RÉFUTER ce constat sous l'angle : ${args.counter_lenses[i % args.counter_lenses.length]}.\n` +
-  `${JSON.stringify(f)}\nrefuted=true par défaut si incertain.`,
-  { label: `contre:${f.id}`, phase: 'Contre-expertise', schema: VERDICT },
+  worker(`counter:${f.id}`, `Try to REFUTE this finding from the angle: ${args.counter_lenses[i % args.counter_lenses.length]}.\n` +
+  `${JSON.stringify(f)}\nrefuted=true by default if uncertain.`),
+  { label: `counter:${f.id}`, phase: 'Counter-expertise', schema: VERDICT },
 ).then(v => ({ ...f, verdict: v })))
 
-phase('Synthèse')
+phase('Synthesis')
 const report = await agent(
-  `Rapport d'audit de ${args.target}, classé par gravité. Constats réfutés en annexe, ` +
-  `constats mineurs marqués "non confirmé".\nConstats vérifiés : ${JSON.stringify(verified.filter(Boolean))}\n` +
-  `Autres constats : ${JSON.stringify(unique.filter(f => !grave.includes(f)))}`,
-  { label: 'synthese', phase: 'Synthèse' },
+  worker('synthesis', `Audit report of ${args.target}, ranked by severity. Refuted findings in an appendix, ` +
+  `minor findings marked "unconfirmed".\nChecked findings: ${JSON.stringify(verified.filter(Boolean))}\n` +
+  `Other findings: ${JSON.stringify(unique.filter(f => !grave.includes(f)))}`),
+  { label: 'synthesis', phase: 'Synthesis' },
 )
 return { report, verified, unique }
 ```
 
 ---
 
-## 3. Diagnostic / debug (deux workflows)
+## 3. Diagnosis / debug (two workflows)
 
-Workflow A, l'enquête :
+Workflow A, the investigation:
 
 ```js
 export const meta = {
-  name: 'swarm-diagnose-enquete',
-  description: 'super-agent : une enquête par hypothèse, preuves pour et contre',
-  phases: [{ title: 'Enquête' }],
+  name: 'swarm-diagnose-investigate',
+  description: 'super-agent: one investigation per hypothesis, evidence for and against',
+  phases: [{ title: 'Investigation' }],
 }
 // args = { symptom, context, hypotheses: [{ id, text }] }
 const results = await pipeline(args.hypotheses, h => agent(
-  `Symptôme : ${args.symptom}\nContexte : ${args.context}\nTon hypothèse : ${h.text}\n` +
-  `Cherche des preuves POUR et CONTRE, avec la même rigueur. LECTURE SEULE : aucune action ` +
-  `qui modifie un système. Propose l'expérience qui départagerait.`,
-  { label: `enquete:${h.id}`, phase: 'Enquête', schema: HYPOTHESIS },
+  worker(`investigate:${h.id}`, `Symptom: ${args.symptom}\nContext: ${args.context}\nYour hypothesis: ${h.text}\n` +
+  `Look for evidence FOR and AGAINST, with the same rigor. READ-ONLY: no action ` +
+  `that changes a system. Propose the experiment that would settle it.`),
+  { label: `investigate:${h.id}`, phase: 'Investigation', schema: HYPOTHESIS },
 ))
 return results
 ```
 
-Lis les résultats, écarte les hypothèses réfutées avec preuve, puis lance le workflow B :
+Read the results, drop the hypotheses refuted with evidence, then launch workflow B:
 
 ```js
 export const meta = {
   name: 'swarm-diagnose-refutation',
-  description: 'super-agent : réfutation croisée des hypothèses survivantes, synthèse',
-  phases: [{ title: 'Réfutation' }, { title: 'Synthèse' }],
+  description: 'super-agent: cross-refutation of surviving hypotheses, synthesis',
+  phases: [{ title: 'Refutation' }, { title: 'Synthesis' }],
 }
 // args = { symptom, survivors: [HYPOTHESIS], all_results: [HYPOTHESIS] }
 const n = args.survivors.length
-// Avec une seule survivante, un réfutateur neuf s'y attaque ; avec zéro, rien à réfuter.
+// With a single survivor, a fresh refuter attacks it; with zero, nothing to refute.
 if (!n) return null
 const cross = await parallel(args.survivors.map((h, i) => () => agent(
-  // Chaque réfutateur vise une hypothèse dont il n'est pas l'enquêteur d'origine.
-  `Symptôme : ${args.symptom}\nToutes les conclusions : ${JSON.stringify(args.all_results)}\n` +
-  `Ta cible : "${args.survivors[(i + 1) % n].hypothesis}". Essaie de la RÉFUTER par une preuve ` +
-  `directe (log, trace, requête, reproduction). Lecture seule.`,
-  { label: `refute:${(i + 1) % n}`, phase: 'Réfutation', schema: HYPOTHESIS },
+  // Each refuter targets a hypothesis it did not originally investigate.
+  worker(`refute:${(i + 1) % n}`, `Symptom: ${args.symptom}\nAll conclusions: ${JSON.stringify(args.all_results)}\n` +
+  `Your target: "${args.survivors[(i + 1) % n].hypothesis}". Try to REFUTE it with direct ` +
+  `evidence (log, trace, query, reproduction). Read-only.`),
+  { label: `refute:${(i + 1) % n}`, phase: 'Refutation', schema: HYPOTHESIS },
 )))
-phase('Synthèse')
+phase('Synthesis')
 return await agent(
-  `Cause la plus probable, preuves, expérience de confirmation et correctif proposé. ` +
-  `Une hypothèse sans preuve directe reste "non confirmée".\n` +
-  `Enquêtes : ${JSON.stringify(args.all_results)}\nRéfutations : ${JSON.stringify(cross.filter(Boolean))}`,
-  { label: 'synthese', phase: 'Synthèse' },
+  worker('synthesis', `Most likely cause, evidence, confirmation experiment and proposed fix. ` +
+  `A hypothesis without direct evidence stays "unconfirmed".\n` +
+  `Investigations: ${JSON.stringify(args.all_results)}\nRefutations: ${JSON.stringify(cross.filter(Boolean))}`),
+  { label: 'synthesis', phase: 'Synthesis' },
 )
 ```
 
 ---
 
-## 4. Implémentation de code (contrats d'abord, puis un workflow d'exécution)
+## 4. Code implementation (contracts first, then an execution workflow)
 
-Vague 1, hors workflow ou en workflow d'un agent : un agent `CONTRACT_PLAN` en lecture seule.
-Si `separable === false`, arrête le swarm. Sinon présente le découpage à l'utilisateur, puis :
+Wave 1, outside a workflow or in a one-agent workflow: a read-only `CONTRACT_PLAN` agent.
+If `separable === false`, stop the swarm. Otherwise present the split to the user, then:
 
 ```js
 export const meta = {
   name: 'swarm-code',
-  description: 'super-agent : implémentation parallèle en worktrees, intégration, tests, revue',
-  phases: [{ title: 'Implémenter' }, { title: 'Intégrer' }, { title: 'Revue' }],
+  description: 'super-agent: parallel implementation in worktrees, integration, tests, review',
+  phases: [{ title: 'Implement' }, { title: 'Integrate' }, { title: 'Review' }],
 }
-// args = { need, plan: CONTRACT_PLAN, integration_branch }
+// args = { slug, need, plan: CONTRACT_PLAN, integration_branch }  — integration_branch: `swarm-<slug>-integration`
 
 const changes = await pipeline(args.plan.tasks, t => agent(
-  `Besoin global : ${args.need}\nInterfaces fixées (à respecter strictement) : ${JSON.stringify(args.plan.interfaces)}\n` +
-  `Ta tâche ${t.id} : ${t.goal}\nTu ne modifies QUE ces fichiers : ${t.files.join(', ')}.\n` +
-  `S'il te faut un autre fichier, arrête-toi et liste-le dans blocked_on sans le modifier.\n` +
-  `Écris ou adapte les tests de ton morceau, lance : ${t.tests || args.plan.test_command}.\n` +
-  `Crée une branche swarm/${t.id}, committe ton travail dessus, et rends branche + commit.`,
-  { label: `impl:${t.id}`, phase: 'Implémenter', schema: CHANGESET, isolation: 'worktree' },
+  worker(`impl:${t.id}`, `Overall need: ${args.need}\nFixed interfaces (to follow strictly): ${JSON.stringify(args.plan.interfaces)}\n` +
+  `Your task ${t.id}: ${t.goal}\nYou change ONLY these files: ${t.files.join(', ')}.\n` +
+  `If you need another file, stop and list it in blocked_on without changing it.\n` +
+  `Write or adapt the tests of your piece, run: ${t.tests || args.plan.test_command}.\n` +
+  `Create a branch swarm-${args.slug}-${t.id}, commit your work on it, and return branch + commit.`),
+  { label: `impl:${t.id}`, phase: 'Implement', schema: CHANGESET, isolation: 'worktree' },
 ))
 const done = changes.filter(Boolean)
 const empty = done.filter(c => !c.branch)
 const blocked = done.filter(c => c.blocked_on.length)
-if (empty.length) log(`${empty.length} tâche(s) sans changement : ${empty.map(c => c.task_id).join(', ')}`)
-if (blocked.length) log(`${blocked.length} tâche(s) bloquée(s) sur des fichiers hors périmètre`)
+if (empty.length) log(`${empty.length} task(s) with no change: ${empty.map(c => c.task_id).join(', ')}`)
+if (blocked.length) log(`${blocked.length} task(s) blocked on out-of-scope files`)
 const red = done.filter(c => c.branch && !c.tests_passed)
-if (red.length) log(`Tests rouges avant intégration : ${red.map(c => `${c.task_id} (${c.tests_run})`).join(' ; ')}`)
+if (red.length) log(`Red tests before integration: ${red.map(c => `${c.task_id} (${c.tests_run})`).join('; ')}`)
 
-phase('Intégrer')
-// En worktree aussi : l'intégration ne doit jamais déplacer le HEAD ni toucher le checkout de l'utilisateur.
+phase('Integrate')
+// In a worktree too: integration must never move HEAD or touch the user's checkout.
 const integ = await agent(
-  `Crée la branche ${args.integration_branch} depuis ${args.plan.base_branch}, ` +
-  `puis merge une par une : ${done.filter(c => c.branch).map(c => c.branch).join(', ')}.\n` +
-  `Résous seulement les conflits triviaux ; liste les autres. Lance ${args.plan.test_command} et le lint. ` +
-  `Ne pousse rien, ne merge pas dans ${args.plan.base_branch}.`,
-  { label: 'integration', phase: 'Intégrer', schema: INTEGRATION, isolation: 'worktree' },
+  worker('integration', `Create the branch ${args.integration_branch} from ${args.plan.base_branch}, ` +
+  `then merge one by one: ${done.filter(c => c.branch).map(c => c.branch).join(', ')}.\n` +
+  `Resolve only trivial conflicts; list the others. Run ${args.plan.test_command} and the lint. ` +
+  `Push nothing, do not merge into ${args.plan.base_branch}.`),
+  { label: 'integration', phase: 'Integrate', schema: INTEGRATION, isolation: 'worktree' },
 )
 
-phase('Revue')
+phase('Review')
 const review = await agent(
-  `Revue du diff ${args.plan.base_branch}...${integ?.branch} contre ces interfaces : ` +
-  `${JSON.stringify(args.plan.interfaces)}. Cherche les défauts de correction et les écarts au contrat.`,
-  { label: 'revue', phase: 'Revue', schema: FINDING },
+  worker('review', `Review of the diff ${args.plan.base_branch}...${integ?.branch} against these interfaces: ` +
+  `${JSON.stringify(args.plan.interfaces)}. Look for correctness defects and deviations from the contract.`),
+  { label: 'review', phase: 'Review', schema: FINDING },
 )
 return { changes: done, integration: integ, review, missing: args.plan.tasks.length - done.length }
 ```
 
-Tâche bloquée ou tests rouges : ne relance pas en boucle. Rapporte, et propose soit une vague de
-correction (nouvelle validation si le total dépasse le nombre approuvé), soit une reprise en
-session unique.
+Blocked task or red tests: do not relaunch in a loop. Report, and propose either a fix wave
+(within the plan's total and the approval threshold in "Thresholds"), or a takeover by a
+single worker that chains the tasks.

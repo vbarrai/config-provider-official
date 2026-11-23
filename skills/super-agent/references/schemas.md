@@ -1,10 +1,10 @@
-# Schémas communs — le contrat de communication
+# Shared schemas — the communication contract
 
-Chaque agent rend un objet validé via l'option `schema` de `agent()`. Ces schémas sont le seul
-canal entre agents : une vague reçoit les sorties de la précédente dans son prompt (JSON) ou via
-`args`. Copie les constantes utiles en tête du script Workflow (JavaScript pur, pas de TypeScript).
+Each agent returns an object validated through the `schema` option of `agent()`. These schemas
+are the only channel between agents: a wave receives the previous one's outputs in its prompt
+(JSON) or via `args`. Workflow script: plain JavaScript, no TypeScript.
 
-Contraintes de l'outil : racine `{type: 'object', properties: {...}}`, `required` inclus dans
+Tool constraints: root `{type: 'object', properties: {...}}`, `required` included in
 `properties`.
 
 ```js
@@ -16,19 +16,19 @@ const FINDING = {
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string', description: 'identifiant court et stable, ex. "sec-03"' },
-          claim: { type: 'string', description: 'le constat, en une phrase' },
-          location: { type: 'string', description: 'fichier:ligne, URL, table… ou "" si sans objet' },
-          evidence: { type: 'array', items: { type: 'string' }, description: 'citations, extraits, sorties de commande' },
-          sources: { type: 'array', items: { type: 'string' }, description: 'URL ou chemins consultés' },
-          severity: { type: 'string', enum: ['critique', 'majeur', 'mineur', 'info'] },
-          confidence: { type: 'string', enum: ['haute', 'moyenne', 'basse'] },
+          id: { type: 'string', description: 'short, stable identifier, e.g. "sec-03"' },
+          claim: { type: 'string', description: 'the finding, in one sentence' },
+          location: { type: 'string', description: 'file:line, URL, table… or "" if not applicable' },
+          evidence: { type: 'array', items: { type: 'string' }, description: 'quotes, excerpts, command outputs' },
+          sources: { type: 'array', items: { type: 'string' }, description: 'URLs or paths consulted' },
+          severity: { type: 'string', enum: ['critical', 'major', 'minor', 'info'] },
+          confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
         },
         required: ['id', 'claim', 'evidence', 'sources', 'confidence'],
       },
     },
     open_questions: { type: 'array', items: { type: 'string' } },
-    not_covered: { type: 'array', items: { type: 'string' }, description: 'ce que cet agent n\'a pas pu examiner, et pourquoi' },
+    not_covered: { type: 'array', items: { type: 'string' }, description: 'what this agent could not examine, and why' },
   },
   required: ['findings', 'not_covered'],
 }
@@ -37,7 +37,7 @@ const VERDICT = {
   type: 'object',
   properties: {
     finding_id: { type: 'string' },
-    refuted: { type: 'boolean', description: 'true si le constat est faux ou non démontré ; true par défaut si incertain' },
+    refuted: { type: 'boolean', description: 'true if the finding is wrong or not shown; true by default if uncertain' },
     reason: { type: 'string' },
     evidence: { type: 'array', items: { type: 'string' } },
   },
@@ -48,10 +48,10 @@ const HYPOTHESIS = {
   type: 'object',
   properties: {
     hypothesis: { type: 'string' },
-    status: { type: 'string', enum: ['confirmée', 'plausible', 'affaiblie', 'réfutée'] },
+    status: { type: 'string', enum: ['confirmed', 'plausible', 'weakened', 'refuted'] },
     evidence_for: { type: 'array', items: { type: 'string' } },
     evidence_against: { type: 'array', items: { type: 'string' } },
-    deciding_experiment: { type: 'string', description: 'expérience ou requête qui départagerait' },
+    deciding_experiment: { type: 'string', description: 'experiment or query that would settle it' },
   },
   required: ['hypothesis', 'status', 'evidence_for', 'evidence_against'],
 }
@@ -59,10 +59,10 @@ const HYPOTHESIS = {
 const CONTRACT_PLAN = {
   type: 'object',
   properties: {
-    separable: { type: 'boolean', description: 'false si des fichiers partagés ou un couplage fort empêchent le parallèle' },
+    separable: { type: 'boolean', description: 'false if shared files or tight coupling prevent parallel work' },
     reason: { type: 'string' },
     base_branch: { type: 'string' },
-    interfaces: { type: 'array', items: { type: 'string' }, description: 'signatures, types et formats fixés entre tâches' },
+    interfaces: { type: 'array', items: { type: 'string' }, description: 'signatures, types and formats fixed between tasks' },
     tasks: {
       type: 'array',
       items: {
@@ -70,13 +70,13 @@ const CONTRACT_PLAN = {
         properties: {
           id: { type: 'string' },
           goal: { type: 'string' },
-          files: { type: 'array', items: { type: 'string' }, description: 'fichiers possédés, disjoints entre tâches' },
-          tests: { type: 'string', description: 'commande de test ciblée pour ce morceau' },
+          files: { type: 'array', items: { type: 'string' }, description: 'owned files, disjoint between tasks' },
+          tests: { type: 'string', description: 'targeted test command for this piece' },
         },
         required: ['id', 'goal', 'files'],
       },
     },
-    test_command: { type: 'string', description: 'commande de la suite complète' },
+    test_command: { type: 'string', description: 'full suite command' },
   },
   required: ['separable', 'reason', 'tasks'],
 }
@@ -85,12 +85,12 @@ const CHANGESET = {
   type: 'object',
   properties: {
     task_id: { type: 'string' },
-    branch: { type: 'string', description: 'branche du worktree contenant le commit, "" si aucun changement' },
+    branch: { type: 'string', description: 'worktree branch holding the commit, "" if no change' },
     commit: { type: 'string' },
     files_changed: { type: 'array', items: { type: 'string' } },
-    tests_run: { type: 'string', description: 'commande lancée et extrait de sortie' },
+    tests_run: { type: 'string', description: 'command run and output excerpt' },
     tests_passed: { type: 'boolean' },
-    blocked_on: { type: 'array', items: { type: 'string' }, description: 'fichiers hors périmètre dont la tâche aurait eu besoin' },
+    blocked_on: { type: 'array', items: { type: 'string' }, description: 'out-of-scope files the task would have needed' },
   },
   required: ['task_id', 'branch', 'files_changed', 'tests_passed', 'blocked_on'],
 }
@@ -100,56 +100,56 @@ const INTEGRATION = {
   properties: {
     branch: { type: 'string' },
     merged: { type: 'array', items: { type: 'string' } },
-    conflicts: { type: 'array', items: { type: 'string' }, description: 'conflits non résolus' },
-    test_output: { type: 'string', description: 'commande et extrait de sortie de la suite complète' },
+    conflicts: { type: 'array', items: { type: 'string' }, description: 'unresolved conflicts' },
+    test_output: { type: 'string', description: 'full suite command and output excerpt' },
     tests_passed: { type: 'boolean' },
   },
   required: ['branch', 'merged', 'conflicts', 'tests_passed'],
 }
 ```
 
-## Goal ouvert (`topologies.md` §5)
+## Open goal (`topologies.md` §5)
 
-Ces deux objets passent par message ou par fichier dans le dossier d'échange (modes sessions et
-sous-agents), ou par `schema` (mode rapide).
+These two objects go by message or by file in the exchange folder (sessions and sub-agents
+modes), or by `schema` (fast mode).
 
 ```js
-const SUJET = {
+const TOPIC = {
   type: 'object',
   properties: {
-    sujets: {
+    topics: {
       type: 'array',
-      description: 'un lot de 5 sujets au plus',
+      description: 'a batch of 5 topics at most',
       items: {
         type: 'object',
         properties: {
-          sujet: { type: 'string', description: 'le sujet, dans la forme des exemples du goal (ex. une question)' },
-          pourquoi: { type: 'string', description: 'en une phrase : pourquoi il remplit le goal' },
-          vu_ou: { type: 'array', items: { type: 'string' }, description: 'fichier:ligne, ticket, message, URL où il apparaît' },
-          proche_de: { type: 'string', description: 'id d\'un sujet accepté qui y ressemble, ou ""' },
+          topic: { type: 'string', description: 'the topic, in the form of the goal examples (e.g. a question)' },
+          why: { type: 'string', description: 'in one sentence: why it fulfills the goal' },
+          seen_in: { type: 'array', items: { type: 'string' }, description: 'file:line, ticket, message, URL where it appears' },
+          close_to: { type: 'string', description: 'id of an accepted topic that resembles it, or ""' },
         },
-        required: ['sujet', 'pourquoi', 'vu_ou'],
+        required: ['topic', 'why', 'seen_in'],
       },
     },
   },
-  required: ['sujets'],
+  required: ['topics'],
 }
 
-// Matière brute d'un exécutant pour un rédacteur : des faits, pas de prose.
-const MATIERE = {
+// An executor's raw material for a writer: facts, not prose.
+const MATERIAL = {
   type: 'object',
   properties: {
-    id: { type: 'string', description: 'id du sujet, ex. "s-04"' },
-    sujet: { type: 'string' },
-    faits: { type: 'array', items: { type: 'string' }, description: 'une ligne par fait, dans l\'ordre où ils se produisent' },
-    preuves: { type: 'array', items: { type: 'string' }, description: 'fichier:ligne, extraits, sorties de commande, captures' },
-    commandes: { type: 'array', items: { type: 'string' }, description: 'commandes ou étapes pour reproduire' },
-    points_ouverts: { type: 'array', items: { type: 'string' }, description: 'ce qui reste incertain ou non vérifié' },
-    confiance: { type: 'string', enum: ['haute', 'moyenne', 'basse'] },
+    id: { type: 'string', description: 'topic id, e.g. "s-04"' },
+    topic: { type: 'string' },
+    facts: { type: 'array', items: { type: 'string' }, description: 'one line per fact, in the order they happen' },
+    evidence: { type: 'array', items: { type: 'string' }, description: 'file:line, excerpts, command outputs, screenshots' },
+    commands: { type: 'array', items: { type: 'string' }, description: 'commands or steps to reproduce' },
+    open_points: { type: 'array', items: { type: 'string' }, description: 'what remains uncertain or unchecked' },
+    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
   },
-  required: ['id', 'sujet', 'faits', 'preuves', 'points_ouverts', 'confiance'],
+  required: ['id', 'topic', 'facts', 'evidence', 'open_points', 'confidence'],
 }
 ```
 
-La synthèse ne prend pas de schéma quand le livrable est un texte (rapport, réponse) : elle rend
-du markdown. Donne-lui un schéma quand le livrable est structuré (tableau de comparaison).
+The synthesis takes no schema when the deliverable is a text (report, answer): it returns
+markdown. Give it a schema when the deliverable is structured (comparison table).

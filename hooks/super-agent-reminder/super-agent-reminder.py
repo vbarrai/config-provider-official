@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
-"""SessionStart hook: au début de chaque session, rappelle d'utiliser le skill super-agent.
+"""super-agent-reminder hook: reminds the agent to use the super-agent skill.
 
-Claude Code (SessionStart) : sort {"hookSpecificOutput": {"hookEventName": "SessionStart",
-"additionalContext": ...}}.
-Cursor (sessionStart) : sort {"additional_context": ...}.
+Wired to SessionStart (see hooks.json): one reminder per session.
 
-Au démarrage, il n'y a pas de prompt : le hook ne peut pas savoir si la session est un
-worker. C'est le texte du rappel qui donne l'exception « tu es toi-même un worker ».
-Le hook ne plante jamais : stdin absent, vide ou invalide → format Claude Code.
+Claude Code: outputs {"hookSpecificOutput": {"hookEventName": <event received>,
+"additionalContext": ...}}. The event name is read from the input (`hook_event_name`),
+not hard-coded: wired to UserPromptSubmit, the script outputs valid JSON, but the reminder
+then goes out with every message, WORKER briefs included (no filter). Missing or unknown
+name -> "SessionStart".
+Cursor (sessionStart): outputs {"additional_context": ...}.
+
+At startup there is no prompt: the hook cannot know whether the session is a worker. The
+reminder text gives the "you are yourself a worker" exception.
+The question / action test is copied word for word from SKILL.md: change them together.
+The hook never crashes: missing, empty or invalid stdin -> Claude Code format.
 """
 import json
 import sys
+
+# Claude Code events whose output accepts `additionalContext`.
+CLAUDE_CODE_EVENTS = ("SessionStart", "UserPromptSubmit")
 
 data = {}
 try:
@@ -24,22 +33,28 @@ if not isinstance(data, dict):
     data = {}
 
 reminder = (
-    "Rappel (hook super-agent) : pendant cette session, dès qu'un message demande de FAIRE "
-    "quelque chose (coder, corriger, chercher, analyser, rédiger, ouvrir une PR...), invoque "
-    "le skill `super-agent` avant toute autre action. Exceptions : simple question, "
-    "explication ou conversation ; tu es toi-même un worker (lancé par une autre session) ; "
-    "l'utilisateur dit « fais-le ici » ou « sans worker »."
+    "Reminder (super-agent hook): at each user message, run this test. "
+    "\"Can you answer without a tool, or with a quick read-only look (3 reads at most: list, "
+    "read, one status)? Yes → it is not an action: answer. No, or you must change or "
+    "create a file, or act outside the conversation → it is an action.\" "
+    "For an action, invoke the `super-agent` skill before any other action. "
+    "Skill already loaded in this conversation → do not re-invoke it. "
+    "Exceptions: you are yourself a worker (your brief starts with `WORKER` or `REVIEWER`, or another "
+    "agent or another session launched you); the user says \"do it here\", \"yourself\" "
+    "or \"without a worker\", in any language."
 )
 
-if data.get("hook_event_name") == "sessionStart":
+event = data.get("hook_event_name")
+if event == "sessionStart":
     # Cursor
     out = {"additional_context": reminder}
 else:
-    # Claude Code (et défaut)
+    # Claude Code (and default)
     out = {
         "hookSpecificOutput": {
-            "hookEventName": "SessionStart",
+            "hookEventName": event if event in CLAUDE_CODE_EVENTS else "SessionStart",
             "additionalContext": reminder,
         }
     }
-print(json.dumps(out, ensure_ascii=False))
+# Pure ASCII output (\uXXXX escapes): the hook does not crash if the output is not UTF-8.
+print(json.dumps(out))
