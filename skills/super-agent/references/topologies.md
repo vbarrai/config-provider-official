@@ -116,8 +116,8 @@ pattern **adds to** the chosen family, whose redundancy and checking apply to th
 **material**, before the writing. Closed goal: the plan does without it, and says so:
 `Topic finders: none — <reason>`.
 
-Each role has its block for the team brief (`team-mode.md`, "Team brief"), whose ending
-replaces the "End" part:
+Each role has its block for the team brief (`team-mode.md`, "Team brief"); for all of them, the
+ending below replaces the brief's "End" part:
 
 ```
 End: you do NOT finish after a topic. After each topic, wait for the next one.
@@ -144,7 +144,7 @@ find nothing more: "NOTHING NEW". Progress: accepted topics / budget (<N>).
 ```
 Your role: executor. The coordinator sends you one topic at a time (message "TOPIC — <id>").
 For each topic: <the family's method: trace in the code, reproduce, source…>.
-You do not write: no minutes, no prose. Write the raw material to
+You do not draft any text: no minutes, no prose. Save the raw material to
 ~/.claude/swarm-runs/<slug>/material/<id>.json in the MATERIAL schema (facts, evidence,
 commands, open points, confidence). Then send "MATERIAL — <id> <path>" to <writer>, and
 "FREE — <id>" to the coordinator. Answer the writer's QUESTION messages.
@@ -187,7 +187,7 @@ the agent total. You do none of these jobs.
 | Role | The need that justifies it | Returns |
 |---|---|---|
 | **Merger** (the "integrator" of §4) | The branches must be tested together before any PR. | `INTEGRATION` |
-| **Checker** (in §1 and §2: the "checker" or "counter-expert") | A result to accept that you cannot check yourself by replaying 1 to 3 commands. | `VERDICT` per task |
+| **Checker** (in §1 and §2: the "verifier" or "counter-expert") | A result to accept that you cannot check yourself by replaying 1 to 3 commands. | `VERDICT` per task |
 | **Tester** (as work goes, before the merge) | An interface or flows to click through that the workers cannot test themselves. | `VERDICT` |
 | **Reproducer** | A bug to reproduce, or a long run on an app that can be launched locally. Launch it when the need appears, not in advance. | `HYPOTHESIS` (cause and evidence) and, if it fixes, `CHANGESET` |
 | **Watchdog** | The only case written in "Thresholds" (SKILL.md). Brief: `sessions-mode.md`, "Watchdog". | `ALERT` messages |
@@ -219,7 +219,7 @@ branch, launch the app (<command>), and replay each check of each task's Eval
 (in ~/.claude/swarm-runs/<slug>/plan.md), for real, in the browser if needed.
 Your goal is to find what does not work. A check you could not replay is
 "unchecked", never OK. Screenshot for each check, in the exchange folder.
-Return a VERDICT per task, then "VERIFIED — <n> OK, <n> KO, <n> unchecked" to the router.
+Return a VERDICT per task, then "VERIFIED — <n> OK, <n> failed, <n> unchecked" to the router.
 Wait for the next check, until the STOP.
 ```
 

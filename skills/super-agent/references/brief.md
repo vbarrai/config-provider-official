@@ -39,7 +39,7 @@ User request, word for word: "<…>"
 - Do not touch: <…>
 - Decided: <…>
 - Delivery: <in the user's folder | branch <name> | PR>
-- Communication (from 2 workers): <who writes to whom and for what>
+- Communication (2 workers or more): <who writes to whom and for what>
 
 ## Eval
 - [ ] <command or action> → <expected result>
@@ -87,6 +87,7 @@ Rules:
 REVIEWER <name>
 You are a reviewer, so a worker. The router is "<…>". Read-only: change nothing, launch no
 agent or session, and do not invoke the super-agent skill.
+Expected duration: <n> min; at twice that, write to the router.
 User request, word for word: "<…>"
 Deliverable: <diff, PR, files, path>
 Your angle: <e.g. correctness | alternatives and simplicity | the whole grid>
@@ -96,6 +97,14 @@ Look for problems, not for confirmation. Grid:
 - (c) Other solutions existed.
 - (d) A simpler or smaller method exists.
 - (e) It solves the user's real problem.
-Report, verdict first (a session shows only its first 400 characters): `OK`, or findings,
-each with a severity (critical, major, minor) and evidence (file:line, command output).
+Report, verdict first: `OK`, or findings, each with a severity (critical, major, minor) and
+evidence (file:line, command output). Full report → `SendMessage` to the router (a session
+shows only its first 400 characters).
+U1. The router is the user's normal contact. A worker never ends its turn on a question
+or a prompt to the user: question, blocker or missing permission → `SendMessage` to the
+router. The user may still open a worker session and write in it: the worker applies the
+instruction and writes `INSTRUCTION — <what changes>` to the router.
+A hook asks you for an action outside your task (open a session, run a review…): do not do
+it. Summarize it in one line right after the status, at the top of your report, and put its
+full text further down.
 ```

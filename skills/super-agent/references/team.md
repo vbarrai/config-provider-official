@@ -6,8 +6,8 @@ rule and fallback: SKILL.md; they also apply to the team.
 ## Step 0 — Choose the mode and check its prerequisites (always, first)
 
 - **Sessions mode** (default; SKILL.md, "The task cycle", step 2, "When" row).
-  `mcp__ccd_session__start_session` missing (after `ToolSearch`) or refused: sub-agents mode
-  (SKILL.md fallback).
+  `mcp__ccd_session__start_session` refused: cards; missing (after `ToolSearch`), or cards
+  refused too: sub-agents mode (SKILL.md, "Fallback").
 - **Sub-agents mode** (fallback, or if the user asks): it needs *agent teams* (named agents):
   do the "Check before launching" of `team-mode.md`.
 - **Fast mode** (`Workflow` tool): only if the user asks for it. Load the `workflow-authoring`
@@ -72,12 +72,13 @@ Open `topologies.md` at the family's section and build the plan:
   agents that create others.
 - **Redundancy**: for each task, 1 or K copies, each with a **different angle** (instruction,
   objective, search method, model): K identical copies have correlated errors.
-- **Checking**: who checks what, and how (sources, reproduction, tests, refutation).
+- **Checking**: who checks what, and how (sources, reproduction, tests, refutation). The final
+  check also applies the `REVIEWER` grid (a)-(e) of `brief.md`.
 - **Topic finders** (open goal): 1 to 2, and a **topic budget** (maximum number of accepted
   topics): the number of agents does not bound it.
 - **Writers**: possible, not required. The deliverable is a long text with a single style
   (doc, minutes, report) and there are 3 executors or more: 1 writer for 2 to 3 executors,
-  who then hand in raw material (`MATERIAL` schema) and do not write. Otherwise, each
+  who then hand in raw material (`MATERIAL` schema) and do not draft. Otherwise, each
   executor writes its part.
 - **Synthesis**: always an agent, never you (with writers: the lead writer `writer-1`),
   following the merge rule (step 6). Short deliverable: a single agent is enough.

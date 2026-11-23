@@ -31,14 +31,14 @@ Each threshold is written only here; elsewhere, the skill points to "Thresholds"
 | Situation | What is required |
 |---|---|
 | Not an action (test above: no tool, or 3 reads at most) | Answer yourself. |
-| Any action beyond that quick look (reading, research, code, branch or PR) | A **session worker** (`start_session`, WORKER brief). A sub-agent (`Agent`) only as a fallback: cycle step 2, "When" row. Isolation: step 2, "Isolation" row. |
+| Any action beyond that quick look (reading, research, code, branch or PR) | A **session worker** (`start_session`, WORKER brief). App refuses: a session card; a sub-agent (`Agent`) only as a last resort: cycle step 2, "When" row. Isolation: step 2, "Isolation" row. |
 | Launching workers | No go-ahead needed: the announcement ("Router and workers"), then launch. |
 | 2 workers or more | A communication strategy, 2-3 lines in each brief. Default: everything goes through the router; a worker that must touch another one's file writes to the router, which decides. |
-| Workers active at the same time, outside a team | **4 at most** per router; the user changes this number in one sentence. "Active" = working: a worker waiting for a merge or a user answer does not count. Extra tasks wait in the list and start as soon as a slot frees up. |
+| Workers active at the same time, outside a team | **4 at most** per router; the user changes this number in one sentence. "Active" = working: a worker waiting for a merge or a user answer does not count. Extra tasks wait in the list and start as soon as a slot frees up. Reviewers take no slot here (they count in the total). |
 | Monitoring | **No watchdog** by default, and never for sub-agents. At each wake-up and each user turn, look at your workers' state, with no wait loop. Sessions: `list_sessions` with `linked: true`. Sub-agent past twice its expected duration without a message: a single `SendMessage` "STATUS?", and one line to the user. A watchdog session only in sessions mode, when the user says they are stepping away or asks for one (brief: `references/sessions-mode.md`, "Watchdog"). |
 | Review of a checked task (cycle step 4) | Always, by criticality. Low (small reversible change, doc, research with no lasting deliverable): 1 reviewer. Medium (code, PR, config, several files): 2 reviewers, different angles. High (prod, security, data, money, irreversible or public action, shared infra): 3 reviewers or more, and a counter-expertise of each serious finding, prompted to refute. Reviewers count in the agent total below. In a team, its planned checking (checker, counter-expert) is this review: do not double it. |
 | A team (redundancy, specialized roles, waves) | The plan shown to the user. They asked for the team in this message and the plan has 10 agents at most → show the plan and launch in the same turn. You propose it yourself → wait for their go-ahead. |
-| Total agents launched for one request (all workers combined, team or not; the router does not count) | 10 agents at most → launch; 11 or more → the user's approval, always: it is spending. Ask before launching the 11th, with the planned total. |
+| Total agents launched for one request (all workers combined, team or not; the router does not count) | 10 agents at most → launch; 11 or more → the user's approval, always: it is spending. Ask before launching the 11th, with the planned total. Reviewers included, the total is planned in the announcement: above 10, ask once, there, not mid-work. |
 
 ## Router and workers — two separate jobs
 
@@ -54,7 +54,7 @@ Each threshold is written only here; elsewhere, the skill points to "Thresholds"
   or a prompt to the user: question, blocker or missing permission → `SendMessage` to the
   router. The user may still open a worker session and write in it: the worker applies the
   instruction and writes `INSTRUCTION — <what changes>` to the router.
-  Put a link to each worker session in your announcement and your report, so the user can open
+  Put a link to each worker session after launching and in your report, so the user can open
   it. Open no side-by-side (split) view unless the user asks.
 - **New task → new worker**, preferably (a small context works better). A chain of tightly
   linked tasks (same files) is one stream, so one worker.
@@ -63,18 +63,19 @@ Each threshold is written only here; elsewhere, the skill points to "Thresholds"
 - **Archive a session worker that has nothing left to do** (`archive_session`), if the user
   said yes to "shall I archive finished sessions?", asked once in the announcement.
   Without a yes: do not archive, list it "to archive" in your report. Conditions: Eval checked,
-  PR merged or closed (or no PR), no rebase coming, result not only in its worktree, no
+  review closed, PR merged or closed (or no PR), no rebase coming, result not only in its worktree, no
   dependent task needs it. App refuses: do not insist. A sub-agent has nothing to archive:
   delete its worktree once the result is delivered or merged.
 
 **The announcement before launching.** One worker: one line ("I'm launching 1 session for
-<task>; say "sub-agents" for a sub-agent. Shall I archive finished sessions?"). 2 workers or
+<task>, then <n> reviewer(s); say "sub-agents" for a sub-agent. Shall I archive finished sessions?"). 2 workers or
 more: the template below; the Merge line only once 2 PRs are planned; as a team, the Shape
 line says so. Launch without waiting for an answer, then give the session links. "Sub-agents"
 said afterwards applies to their next turns.
 
 ```
 Shape: <n> streams → <n> sessions (say "sub-agents" for sub-agents)
+Review: <n> reviewers — total <N> agents
 Archive: shall I archive finished sessions?
 Communication: <who writes to whom, which messages>
 Why: <the reason for the choice>
@@ -101,6 +102,8 @@ grouped: one escalation, 2 options at most, your recommendation.
 **Smooth flow.** Anticipate and prepare the next steps yourself (what comes right after a
 merge, a review, a user answer), so the user only has to decide, with no wait and no manual
 step. Invent the organization each situation needs: this skill gives the goal, not a recipe.
+In a user turn, you may launch ahead the sessions you will need later (their brief says: wait
+for `GO` from the router), to avoid cards afterwards.
 
 **Time sinks**: fix what is within your power, otherwise propose it in your report
 (`references/flow.md` §3). **Chained work**: stacked branches (`references/flow.md` §2).
@@ -112,20 +115,24 @@ Do it yourself only in these cases:
   agent or another session launched you. Do the work; launch no worker.
 - **It is not an action** (test at the top), or **the user says so**: "do it here",
   "yourself", "without a worker".
-- **Fallback.** `start_session` missing or refused: a single try. Launch the first session
-  alone; refused → this whole launch goes to sub-agents (`Agent`, same brief, router = "main";
-  in a team, the `team-mode.md` brief), say so in one line. `Agent` refused too → do it yourself.
+- **Fallback.** `start_session` refused: a single try per launch. Launch the first session
+  alone; refused → propose each session of this launch as a card: `start_session` with
+  `initiation: "own_initiative"` and the full brief; it starts when the user clicks; one line
+  to the user. For workers and reviewers alike. A refusal holds only for its turn. Tool missing,
+  or card refused too → sub-agents (`Agent`, same brief, router = "main"; in a team, the
+  `team-mode.md` brief), said in one line. `Agent` refused too → do it yourself.
 
 **Wake-up turn** (started by a notification or by another agent, not by the user): the next
 task starts at once; never wait for the user's next message for a ready task. The app may
-refuse to open a session in this turn: then `SendMessage` to an existing session that has the
-context, otherwise a sub-agent, and one line to the user. Reviewers often start in such a turn
-(a worker's end): this fallback applies to them.
+refuse to open a session in this turn: propose it as a card (`initiation: "own_initiative"`,
+"Fallback"). A worker task may instead go by `SendMessage` to a session that already has its
+context. Reviewers often start in such a turn (a worker's end): always a new session or its
+card, never one already running.
 
 ## The task cycle (router ↔ worker)
 
 1. **The tasks.** Split the request into tasks, written so a worker can do them without asking
-   anything. **What**: what to deliver and where (its folder by default; branch or PR if the
+   anything. **What**: what to deliver and where (the user's folder by default; branch or PR if the
    user asks), what it touches, what it does not touch, what is decided. **Eval**: 1 to 5 lines
    "command or action → expected result", edge cases included, and "Done when". A missing
    piece of information changes the work: apply U2; if the user is truly needed, **one**
@@ -136,7 +143,7 @@ context, otherwise a sub-agent, and one line to the user. Reviewers often start 
 
    | | Sub-agent (`Agent`) | Session (`mcp__ccd_session__start_session`) |
    |---|---|---|
-   | When | Fallback only: `start_session` missing or refused ("Fallback"); the user asks for it ("sub-agents", "no session"); a wake-up turn where the app refuses a session ("Wake-up turn"). | By default, for any action, PR or not, and for reviewers: the user sees each worker's work and can step in in an emergency. `initiation: "user_asked"`: the user asked for sessions as the default. |
+   | When | Last resort only: `start_session` missing, or its card refused too ("Fallback"); the user asks for it ("sub-agents", "no session"). | By default, for any action, PR or not, and for reviewers: the user sees each worker's work and can step in in an emergency. `initiation: "user_asked"`: the user asked for sessions as the default. App refuses: the same call as a card, `initiation: "own_initiative"` ("Fallback"). |
    | Brief | `prompt`: the WORKER brief. | `prompt`: the WORKER brief; `title`: under 60 characters; `context: "fresh"`; `background` (80 characters at least): what the user wants, why, what is already decided. |
    | Name | `name`, if the tool has this parameter: `<prefix>-<task>`. The prefix: 3 to 6 letters taken from the router's topic, the same for all its workers. | `name`: same rule, in `[a-z0-9-]`, 24 characters at most. |
    | Isolation | **Based on the delivery, never on the duration.** Delivery in the user's folder (no branch, no PR): no `isolation`. Two such tasks at the same time: disjoint files (written in each brief's "Touch") → both in the folder; possibly the same files → one after the other. Never a worktree whose branch nobody brings back. Delivery as a branch or PR: `isolation: "worktree"`. Exception: starting from the user's uncommitted work, with a PR → no `isolation`, a single writer; the worker creates the branch in place and says so in its report. Other repo, existing branch, or session outside a git repo: no `isolation`; the brief gives the repo path and the matching `git worktree add` command (`references/brief.md`). | `use_worktree: true` if it delivers a branch or PR; `false` if it only reads, delivers in the user's folder, or starts from their uncommitted work (even with a PR: branch created in place, a single writer); `source_branch` for an existing branch or a stacked chain; `cwd` for another repo. |
@@ -152,13 +159,14 @@ context, otherwise a sub-agent, and one line to the user. Reviewers often start 
    files, PR; session: `get_session`, `list_events`): do not take the report on trust.
    - Everything passes → critical review, then task "done". Archive the session if the
      archiving rule in "Router and workers" allows it.
-   - **Critical review**: always launch the reviewers set in "Thresholds", each a separate
-     session (`use_worktree: false`), in parallel, read-only, with the `REVIEWER` brief
+   - **Critical review**: always launch the reviewers set in "Thresholds", each a new
+     session, never the author's (`use_worktree: false`), in parallel, read-only, with the `REVIEWER` brief
      (`references/brief.md`). Each gets the user's request word for word and the deliverable
      (diff, PR, files, path), NOT the worker's report or your opinion. Check each finding
      yourself: confirmed → `TO FIX` to the original worker; it changes the approach (simpler
      solution, already done elsewhere) → decide if reversible (U2), otherwise escalate with
-     your recommendation. After the fix, 1 reviewer rechecks only the fixed points.
+     your recommendation. A report after a review `TO FIX` → only a recheck by 1 reviewer, on
+     the fixed points, not a new full review. Review findings use the same `TO FIX` count.
    - One point fails → to the **same** worker: "TO FIX — <failing Eval line, what you saw>".
      2 `TO FIX` on the same point → rewrite the Eval; at the 3rd, escalate to the user. 2
      `TO FIX` with a reduced model → relaunch with the session's model.
@@ -187,11 +195,12 @@ context, otherwise a sub-agent, and one line to the user. Reviewers often start 
   `references/brief.md`). Bind the PR **once** (`mcp__ccd_pr__bind_pr`).
 - **PR state**: `mcp__ccd_pr__get_status`; several PRs with you → one read per wake-up or turn,
   no loop: `gh pr view <URL> --json state,mergeStateStatus,statusCheckRollup`.
-- **Merge**: never without the user's approval, given in the chat (one PR: "PR ready —
+- **Merge**: never before the task's review is closed (merge question, `MERGE`, and turning
+  on auto-merge), and never without the user's approval, given in the chat (one PR: "PR ready —
   <URL>, shall I merge?"; several: "The announcement"). "Auto when green" →
   `mcp__ccd_pr__set_auto_merge`; refused, or it does not target this PR → `gh pr merge <URL> --auto`.
-  Otherwise → `MERGE — <URL>` to the PR's worker, one at a time. `REBASE` only on conflict or
-  GitHub refusal. Details and other fallbacks: `references/flow.md` §1.
+  Otherwise → `MERGE — <URL>` to the PR's worker, one at a time. `REBASE` when the flow needs it
+  ("Smooth flow"). Details and other fallbacks: `references/flow.md` §1.
 
 ### Worker brief
 

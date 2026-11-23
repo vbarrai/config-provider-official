@@ -15,7 +15,7 @@ session in your messages (U1); open no split view unless the user asks.
   permission mode family: **do not change the mode** of the sessions you launch (no
   `permission_mode`: they inherit yours). Otherwise they stay stuck waiting for an approval
   that Desktop cannot show.
-- **A wake-up turn may not open a session** (SKILL.md, "Wake-up turn"). For a next wave, **reuse the existing sessions** by message, or launch a sub-agent.
+- **A wake-up turn may not open a session** (SKILL.md, "Wake-up turn"). For a next wave, **reuse the existing sessions** by message, or propose cards (SKILL.md, "Fallback").
 - **Your own name**: the sessions must be able to reach you. Before launching, call
   `ListAgents`: the line that designates you gives your name. Write it in `plan.md` and in
   each brief ("Coordinator" line). Not found: write in the brief "to reach the coordinator,
@@ -27,8 +27,8 @@ session in your messages (U1); open no split view unless the user asks.
    session, a bold line with its title and one sentence on what it will do.
 2. Call `mcp__ccd_session__start_session` for the first session, alone. It starts → the
    others, **in the same message**. It is refused → do not try the others: it is the SKILL.md
-   fallback ("When you do not delegate"), the whole wave goes to sub-agents, with the same
-   team brief (the router there is "main"). The parameters are a session's in the SKILL.md
+   "Fallback", the whole wave is proposed as cards; cards refused too → sub-agents, with the
+   same team brief (the router there is "main"). The parameters are a session's in the SKILL.md
    table ("The task cycle", step 2), with:
    - `prompt`: the team brief from `team-mode.md`, `<sessions: …>` lines included;
      `background`: the overall problem, the end criterion, the role of each other session;

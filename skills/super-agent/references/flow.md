@@ -13,9 +13,11 @@ different repos have no shared queue.
   - "at each PR": one line per ready PR ("PR 2 ready to merge — <URL>");
   - no answer: a single grouped escalation when the PRs are ready ("PRs 1, 2, 3 ready, shall
     I merge in this order?").
+- **Review first**: no merge question, `MERGE` or auto-merge before the task's review is
+  closed (SKILL.md, step 4).
 - **After a `PR OPEN`**: reread the PR's state at your next wake-up or turn. Green → merge
   question; red → `TO FIX` to the same worker. No wait loop.
-- **With "auto": no queue.** Turn on auto-merge for each checked PR
+- **With "auto": no queue.** Turn on auto-merge for each PR whose review is closed
   (`mcp__ccd_pr__set_auto_merge`, `enabled: true`; fallback: SKILL.md, "PRs"). GitHub merges
   each green PR and nothing comes back to you: at each wake-up or turn, reread the PRs' state,
   say which are merged, and send `REBASE` to the worker whose PR is in conflict.
@@ -25,10 +27,10 @@ different repos have no shared queue.
   owns the PR; it answers `MERGED — <URL>`. You do not merge yourself.
 - **`bind_pr` fails or is refused**: no auto-merge on that PR. Give its link in your report and
   ask the user for the merge, in batches.
-- **After a merge: no automatic rebase**, even if the base moves without you (other routers,
-  colleagues). `REBASE — <base branch> moved (PR <URL> merged)` goes only to the worker whose
-  PR is in conflict, or whose merge GitHub refuses (up-to-date branch required).
-  Exception: a stacked branch (§2).
+- **After a merge**, even if the base moves without you (other routers, colleagues):
+  `REBASE — <base branch> moved (PR <URL> merged)` goes to the workers "Smooth flow" calls for
+  (SKILL.md), at least the one whose PR is in conflict, or whose merge GitHub refuses (up-to-date
+  branch required), and a stacked branch (§2).
 - **Failed rebase or red CI**: the PR leaves the head of the queue, the next one goes first.
 - **After a batch of merges**, look at the base's CI: two PRs green separately can break
   together. Red → a new task, stated in one line.

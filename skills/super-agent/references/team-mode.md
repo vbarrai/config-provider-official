@@ -84,8 +84,6 @@ To fill it in:
   "Your mission" line;
 - web pages to open: add the "Browser" instruction.
 
-Keep the `AVANCEMENT` token as is: the swarm-view mod parses it.
-
 ```
 WORKER <name>
 <sessions: SWARM <slug> <name>>
@@ -101,12 +99,12 @@ Full plan: ~/.claude/swarm-runs/<slug>/plan.md
 <sessions: At startup, run ListAgents to check that you do see the other sessions by name.>
 
 <sessions: Progress — the user follows your percentage in the Swarm panel:
-- at the start, split your mission into 4 to 8 steps and run: echo "AVANCEMENT 0 <first step>";
+- at the start, split your mission into 4 to 8 steps and run: echo "PROGRESS 0 <first step>";
 - after each finished step, and at least every 10 actions, run the Bash command:
-  echo "AVANCEMENT <percentage 0-100> <current step, in a few words>";
+  echo "PROGRESS <percentage 0-100> <current step, in a few words>";
 - the percentage is your honest estimate of what is done on YOUR mission; it can go down
   if you discover extra work;
-- right before "DONE", run: echo "AVANCEMENT 100 done".>
+- right before "DONE", run: echo "PROGRESS 100 done".>
 
 Communication — you MUST write to the others with SendMessage when, and only when:
 - DISCOVERY: you find a fact that changes another agent's work → write to it;
@@ -141,7 +139,7 @@ The plan sets it: write it in `plan.md` and in each brief.
 | Research | Each explorer sends its DISCOVERY messages to the explorers whose sub-question they touch. The checker receives the key findings as they come and sends back REFUTATION messages. |
 | Audit | Each reviewer sends its serious findings to the counter-expert as soon as it finds them. The counter-expert answers the author with a REFUTATION or a confirmation. |
 | Diagnosis | Ongoing debate: each investigator sends its evidence AGAINST the others' hypotheses to their investigators. A hypothesis stands as long as nobody has refuted it with evidence. |
-| Code | The "contracts" agent answers interface QUESTION messages. An implementer that NEEDS a file it does not own writes to its owner. The merger flags conflicts to the authors concerned. Worker → tester (`TO TEST`) → worker (`VERIFIED` / `TO FIX`). Router → merger (`TO INTEGRATE`) → router (`INTEGRATED`) → checker (`TO VERIFY`) → router (`VERIFIED`). Everyone → reproducer (`BUG`) → router (`FIXED`). |
+| Code | The "contracts" agent answers interface QUESTION messages. An implementer with a NEED for a file it does not own writes to its owner. The merger flags conflicts to the authors concerned. Worker → tester (`TO TEST`) → worker (`VERIFIED` / `TO FIX`). Router → merger (`TO INTEGRATE`) → router (`INTEGRATED`) → checker (`TO VERIFY`) → router (`VERIFIED`). Everyone → reproducer (`BUG`) → router (`FIXED`). |
 | Open goal | Finder → coordinator (`TOPICS`, `NOTHING NEW`). Coordinator → executor (`TOPIC`). Executor → its writer (`MATERIAL`) and → coordinator (`FREE`). Writer → executor (`QUESTION`) and → coordinator (`WRITTEN`). Coordinator → all (`STOP`). |
 
 The other messages: `ALERT` (watchdog → router), `INSTRUCTION` (worker → router, see U1),
