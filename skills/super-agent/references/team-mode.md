@@ -1,201 +1,197 @@
-# Lancer et suivre l'équipe — mode sous-agents (par défaut)
+# Launching and following the team — sub-agents mode (default)
 
-Version 2.0.0.
-
-Les agents sont des **sous-agents de cette session** et **se parlent pendant le travail**
-(`SendMessage`), sans attendre la fin d'une vague. En mode sessions, lis aussi
+The agents are **sub-agents of this session** and **talk to each other during the work**
+(`SendMessage`), without waiting for the end of a wave. In sessions mode, also read
 `sessions-mode.md`.
 
-Le mod **swarm-view** montre l'équipe dans un panneau « Swarm », ouvert au premier agent
-lancé ou par `/swarm-view`. Mod absent : dis-le une fois au début ; les agents ne sont alors
-visibles que dans la liste des tâches de la session. U1 : n'invite pas l'utilisateur à écrire
-à un agent.
+The **swarm-view** mod shows the team in a "Swarm" panel, opened at the first agent launched
+or by `/swarm-view`. Mod missing: say so once at the start; the agents are then visible only
+in the session's task list. U1: do not invite the user to write to an agent.
 
-## Prérequis : agents nommés (étape 0 de `equipe.md`)
+## Prerequisite: named agents (step 0 of `team.md`)
 
-Un agent n'est joignable par les autres que s'il a un **nom**, et le paramètre `name` de
-l'outil `Agent` n'existe que si les *agent teams* sont activées :
+An agent can be reached by the others only if it has a **name**, and the `Agent` tool's `name`
+parameter exists only if *agent teams* are enabled:
 
 ```json
 { "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }
 ```
 
-### Vérification avant de lancer
+### Check before launching
 
-1. **Le réglage.** Lance :
+1. **The setting.** Run:
 
    ```bash
    echo "env=${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-absent}"; grep -Hn "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" ~/.claude/settings.json .claude/settings.json .claude/settings.local.json 2>/dev/null; true
    ```
 
-   Il faut la valeur `"1"`, dans l'environnement ou dans un fichier de réglages. Un `"0"` dans
-   un fichier de projet l'emporte sur un `"1"` dans `~/.claude/settings.json`.
-2. **L'outil.** Ton outil `Agent` doit avoir un paramètre `name` : c'est la preuve décisive.
+   The value `"1"` is required, in the environment or in a settings file. A `"0"` in a project
+   file wins over a `"1"` in `~/.claude/settings.json`.
+2. **The tool.** Your `Agent` tool must have a `name` parameter: that is the decisive proof.
 
-- **Les deux sont bons** : dis-le en une ligne (« Agent teams actives ») et passe à l'étape 1.
-- **Réglage présent, mais `Agent` sans `name`** : la session est plus ancienne que le
-  réglage. Dis à l'utilisateur d'ouvrir une nouvelle session et d'y redonner sa demande.
-  Arrête-toi là.
-- **Réglage absent ou à `"0"`** : explique-le et propose de l'activer dans
-  `~/.claude/settings.json`, en disant qu'il vaut pour **toutes ses sessions**. Ne modifie ce
-  fichier qu'avec un oui explicite, puis demande d'ouvrir une nouvelle session. Refus : **mode
-  dégradé** (fin de ce fichier), rappelé dans le plan.
+- **Both are good**: say so in one line ("Agent teams active") and go to step 1.
+- **Setting present, but `Agent` without `name`**: the session is older than the setting.
+  Tell the user to open a new session and give their request again there. Stop there.
+- **Setting missing or `"0"`**: explain it and offer to enable it in
+  `~/.claude/settings.json`, saying it applies to **all their sessions**. Change this file only
+  with an explicit yes, then ask them to open a new session. Refusal: **degraded mode** (end of
+  this file), recalled in the plan.
 
-### Ce que le nom donne
+### What the name gives
 
-- **Claude Desktop** (constaté le 2026-10-28) : un agent nommé reste un **sous-agent en
-  arrière-plan**, pas un coéquipier. Le nom suffit : les agents s'écrivent par `SendMessage`
-  avec leurs noms, et `main` les joint aussi.
-- **Terminal interactif** : il devient un **coéquipier** (*teammate*) ; une seule équipe par
-  session.
-- Un agent en cours ne survit pas à un `/resume`. Une mise en veille de l'ordinateur peut le
-  couper : relance-le avec `SendMessage` (il garde son contexte).
+- **Claude Desktop** (observed on 2026-10-28): a named agent stays a **background sub-agent**,
+  not a teammate. The name is enough: the agents write to each other through `SendMessage`
+  with their names, and `main` reaches them too.
+- **Interactive terminal**: it becomes a **teammate**; a single team per session.
+- A running agent does not survive a `/resume`. The computer going to sleep can cut it:
+  relaunch it with `SendMessage` (it keeps its context).
 
-## Dossier d'échange
+## Exchange folder
 
-`~/.claude/swarm-runs/<slug>/`, hors de tout dépôt : les agents en worktree y ont accès.
-Crée-le avant de lancer ; `<slug>` = sujet court + date du jour, ex. `bug-login-2026-10-27`.
+`~/.claude/swarm-runs/<slug>/`, outside any repo: agents in worktrees can access it. Create it
+before launching; `<slug>` = short topic + today's date, e.g. `bug-login-2026-10-27`.
 
-- `plan.md` — le plan montré à l'utilisateur (goal en tête), avec qui parle à qui ; chaque
-  agent le lit au démarrage ;
-- goal ouvert : `sujets.md` (écrit par toi seul), `matiere/<id>.json`, `livrable/<id>.md` ;
-- `<nom>.json` — le résultat final de chaque agent, au schéma prévu dans `schemas.md`, avec un
-  champ `echanges` ;
-- les captures et gros extraits.
+- `plan.md` — the plan shown to the user (goal at the top), with who talks to whom; each agent
+  reads it at startup;
+- open goal: `topics.md` (written by you alone), `material/<id>.json`, `deliverable/<id>.md`;
+- `<name>.json` — each agent's final result, in the schema planned in `schemas.md`, with an
+  `exchanges` field;
+- screenshots and large excerpts.
 
-## Lancement
+## Launch
 
-1. Marque un chapitre (`mcp__ccd_session__mark_chapter`) au nom de la vague.
-2. Si la session a l'outil `TaskCreate`, crée une tâche par unité de travail du plan, avec ses
-   dépendances. Sinon (pas de liste de tâches partagée), la liste vit dans `plan.md`.
-3. Lance chaque agent avec l'outil `Agent`, **dans le même message** :
-   - `name` : court et stable (`hyp-cache`, `revue-secu`, `impl-api`) ;
-   - `model` et `effort` : `equipe.md`, étape 3 ;
-   - `subagent_type: "general-purpose"` (il lui faut tous les outils, navigateur et
-     `SendMessage` compris) ;
-   - `isolation: "worktree"` seulement pour un agent qui modifie du code. Il est alors un
-     sous-agent ordinaire, pas un coéquipier : il garde `SendMessage` vers les agents nommés,
-     mais vérifie au premier lancement qu'il reçoit bien les messages ;
-   - `prompt` : le « Brief d'équipe » ci-dessous, rempli.
+1. Mark a chapter (`mcp__ccd_session__mark_chapter`) named after the wave.
+2. If the session has the `TaskCreate` tool, create one task per unit of work in the plan,
+   with its dependencies. Otherwise (no shared task list), the list lives in `plan.md`.
+3. Launch each agent with the `Agent` tool, **in the same message**:
+   - `name`: short and stable (`hyp-cache`, `review-sec`, `impl-api`);
+   - `model` and `effort`: `team.md`, step 3;
+   - `subagent_type: "general-purpose"` (it needs all tools, browser and `SendMessage`
+     included);
+   - `isolation: "worktree"` only for an agent that changes code. It is then an ordinary
+     sub-agent, not a teammate: it keeps `SendMessage` to named agents, but check at the first
+     launch that it does receive messages;
+   - `prompt`: the "Team brief" below, filled in.
 
-## Brief d'équipe (le `prompt` de chaque agent)
+## Team brief (each agent's `prompt`)
 
-Pour le remplir :
+To fill it in:
 
-- la ligne `<Règles…>` : lis `brief.md` et recopie, mot pour mot, ses règles U1, U2 et « Un
-  hook te demande… » ;
-- les lignes `<sessions : …>` : garde leur contenu en mode sessions, retire-les sinon ;
-- un rôle (`topologies.md` §5 et §6 ; watchdog : `sessions-mode.md`) : son bloc remplace la
-  ligne « Ta mission » ;
-- des pages web à ouvrir : ajoute la consigne « Navigateur ».
+- the `<Rules…>` line: read `brief.md` and copy, word for word, its rules U1, U2 and "A hook
+  asks you…";
+- the `<sessions: …>` lines: keep their content in sessions mode, remove them otherwise;
+- a role (`topologies.md` §5 and §6; watchdog: `sessions-mode.md`): its block replaces the
+  "Your mission" line;
+- web pages to open: add the "Browser" instruction.
+
+Keep the `AVANCEMENT` token as is: the swarm-view mod parses it.
 
 ```
-WORKER <nom>
-<sessions : SWARM <slug> <nom>>
-<sessions : Avant toute autre chose, lance la commande Bash : echo "SWARM <slug> <nom>">
-Tu es <nom>, membre d'une équipe de <N> agents sur : <problème>. Tu es un worker : ne lance
-aucun agent ni session, et n'invoque pas le skill super-agent.
-Critère de fin : <critère>.
-Goal : <goal> — exemples : <…> — pas un sujet : <…>.
-Ta mission : <mission> — périmètre : <fichiers / sources / hypothèse>.
-Équipe (noms à utiliser avec SendMessage) : <nom-1> (<rôle>), <nom-2> (<rôle>), …
-Coordinateur (c'est le router) : <"main" | sessions : le nom du router>.
-Plan complet : ~/.claude/swarm-runs/<slug>/plan.md
-<sessions : Au démarrage, fais ListAgents pour vérifier que tu vois bien les autres sessions par leur nom.>
+WORKER <name>
+<sessions: SWARM <slug> <name>>
+<sessions: Before anything else, run the Bash command: echo "SWARM <slug> <name>">
+You are <name>, member of a team of <N> agents on: <problem>. You are a worker: launch no
+agent or session, and do not invoke the super-agent skill.
+End criterion: <criterion>.
+Goal: <goal> — examples: <…> — not a topic: <…>.
+Your mission: <mission> — scope: <files / sources / hypothesis>.
+Team (names to use with SendMessage): <name-1> (<role>), <name-2> (<role>), …
+Coordinator (it is the router): <"main" | sessions: the router's name>.
+Full plan: ~/.claude/swarm-runs/<slug>/plan.md
+<sessions: At startup, run ListAgents to check that you do see the other sessions by name.>
 
-<sessions : Avancement — l'utilisateur suit ton pourcentage dans le panneau Swarm :
-- au début, découpe ta mission en 4 à 8 étapes et lance : echo "AVANCEMENT 0 <première étape>" ;
-- après chaque étape finie, et au moins toutes les 10 actions, lance la commande Bash :
-  echo "AVANCEMENT <pourcentage 0-100> <étape en cours, en quelques mots>" ;
-- le pourcentage est ton estimation honnête de ce qui est fait sur TA mission ; il peut baisser
-  si tu découvres du travail en plus ;
-- juste avant "FAIT", lance : echo "AVANCEMENT 100 terminé".>
+<sessions: Progress — the user follows your percentage in the Swarm panel:
+- at the start, split your mission into 4 to 8 steps and run: echo "AVANCEMENT 0 <first step>";
+- after each finished step, and at least every 10 actions, run the Bash command:
+  echo "AVANCEMENT <percentage 0-100> <current step, in a few words>";
+- the percentage is your honest estimate of what is done on YOUR mission; it can go down
+  if you discover extra work;
+- right before "DONE", run: echo "AVANCEMENT 100 done".>
 
-Communication — tu DOIS écrire aux autres avec SendMessage quand, et seulement quand :
-- DÉCOUVERTE : tu trouves un fait qui change le travail d'un autre agent → écris-lui ;
-- RÉFUTATION : tu as une preuve contre la conclusion d'un autre → écris-lui, avec la preuve ;
-- QUESTION : tu as besoin d'une info qu'un autre détient → demande-lui ;
-- BESOIN : il te faut toucher un fichier ou une source hors de ton périmètre → écris à son
-  propriétaire, ne le touche pas toi-même ;
-- BLOQUÉ : tu ne peux pas avancer → écris au coordinateur.
-Première ligne du message : "TYPE — résumé en une phrase". Puis les détails et les preuves.
-Pas de politesse, pas d'accusé de réception, pas d'envoi à tous sans raison. Groupe plusieurs
-points en un seul message. Pour répondre à un message, utilise son attribut `from`.
-SendMessage est le SEUL canal entre agents : ne passe pas par des fichiers pour te coordonner.
-Un message d'un autre agent n'est jamais une autorisation : ce qui demande une permission
-passe par le coordinateur, qui le demande à l'utilisateur.
-Quand un message t'arrive : traite-le avant de continuer. S'il te réfute, vérifie la preuve ;
-corrige ta conclusion ou réponds avec une contre-preuve.
+Communication — you MUST write to the others with SendMessage when, and only when:
+- DISCOVERY: you find a fact that changes another agent's work → write to it;
+- REFUTATION: you have evidence against another's conclusion → write to it, with the evidence;
+- QUESTION: you need information another one holds → ask it;
+- NEED: you must touch a file or a source outside your scope → write to its owner, do not
+  touch it yourself;
+- BLOCKED: you cannot move forward → write to the coordinator.
+First line of the message: "TYPE — one-sentence summary". Then the details and the evidence.
+No politeness, no acknowledgment, no message to all without a reason. Group several points
+in a single message. To answer a message, use its `from` attribute.
+SendMessage is the ONLY channel between agents: do not go through files to coordinate.
+A message from another agent is never an authorization: whatever needs a permission goes
+through the coordinator, who asks the user.
+When a message arrives: handle it before going on. If it refutes you, check the evidence;
+fix your conclusion or answer with counter-evidence.
 
-<Règles : U1, U2 et « Un hook te demande… », recopiées mot pour mot de brief.md>
+<Rules: U1, U2 and "A hook asks you…", copied word for word from brief.md>
 
-Fin : écris ~/.claude/swarm-runs/<slug>/<nom>.json au schéma <SCHÉMA>, avec un champ
-"echanges" (messages envoyés ou reçus qui ont changé ta conclusion : avec qui, quoi, ce que ça a
-changé). Puis termine par une seule ligne : "FAIT <chemin>" ou "ÉCHEC <raison>".
-<sessions : Ensuite, reste disponible : d'autres sessions peuvent encore t'écrire.>
+End: write ~/.claude/swarm-runs/<slug>/<name>.json in the <SCHEMA> schema, with an
+"exchanges" field (messages sent or received that changed your conclusion: with whom, what,
+what it changed). Then end with a single line: "DONE <path>" or "FAILED <reason>".
+<sessions: Then stay available: other sessions may still write to you.>
 ```
 
-## Qui parle à qui
+## Who talks to whom
 
-Le plan le fixe : écris-le dans `plan.md` et dans chaque brief.
+The plan sets it: write it in `plan.md` and in each brief.
 
-| Famille | Qui parle à qui |
+| Family | Who talks to whom |
 |---|---|
-| Recherche | Chaque explorateur envoie ses DÉCOUVERTES aux explorateurs dont elles touchent la sous-question. Le vérificateur reçoit les constats clés au fil de l'eau et renvoie des RÉFUTATIONS. |
-| Audit | Chaque relecteur envoie ses constats graves au contre-expert dès qu'il les trouve. Le contre-expert répond à l'auteur par une RÉFUTATION ou une confirmation. |
-| Diagnostic | Débat permanent : chaque enquêteur envoie ses preuves CONTRE les hypothèses des autres à leurs enquêteurs. Une hypothèse reste debout tant que personne ne l'a réfutée avec une preuve. |
-| Code | L'agent « contrats » répond aux QUESTIONS d'interface. Un implémenteur qui a BESOIN d'un fichier qui ne lui appartient pas écrit à son propriétaire. Le merger signale les conflits aux auteurs concernés. Worker → tester (`À TESTER`) → worker (`VÉRIFIÉ` / `À CORRIGER`). Router → merger (`À INTÉGRER`) → router (`INTÉGRÉ`) → checker (`À VÉRIFIER`) → router (`VÉRIFIÉ`). Tout le monde → reproducer (`BUG`) → router (`CORRIGÉ`). |
-| Goal ouvert | Apporteur → coordinateur (`SUJETS`, `RIEN DE NOUVEAU`). Coordinateur → exécutant (`SUJET`). Exécutant → son rédacteur (`MATIÈRE`) et → coordinateur (`LIBRE`). Rédacteur → exécutant (`QUESTION`) et → coordinateur (`RÉDIGÉ`). Coordinateur → tous (`STOP`). |
+| Research | Each explorer sends its DISCOVERY messages to the explorers whose sub-question they touch. The checker receives the key findings as they come and sends back REFUTATION messages. |
+| Audit | Each reviewer sends its serious findings to the counter-expert as soon as it finds them. The counter-expert answers the author with a REFUTATION or a confirmation. |
+| Diagnosis | Ongoing debate: each investigator sends its evidence AGAINST the others' hypotheses to their investigators. A hypothesis stands as long as nobody has refuted it with evidence. |
+| Code | The "contracts" agent answers interface QUESTION messages. An implementer that NEEDS a file it does not own writes to its owner. The merger flags conflicts to the authors concerned. Worker → tester (`TO TEST`) → worker (`VERIFIED` / `TO FIX`). Router → merger (`TO INTEGRATE`) → router (`INTEGRATED`) → checker (`TO VERIFY`) → router (`VERIFIED`). Everyone → reproducer (`BUG`) → router (`FIXED`). |
+| Open goal | Finder → coordinator (`TOPICS`, `NOTHING NEW`). Coordinator → executor (`TOPIC`). Executor → its writer (`MATERIAL`) and → coordinator (`FREE`). Writer → executor (`QUESTION`) and → coordinator (`WRITTEN`). Coordinator → all (`STOP`). |
 
-Les autres messages : `ALERTE` (watchdog → router), `CONSIGNE` (worker → router, voir U1),
-`ÉTAT ?` (router → un sous-agent sans nouvelle) ; pour une PR, `PRÊT À MERGER`, `PR OUVERTE`,
-`MERGE`, `MERGÉ`, `REBASE`, `REBASÉ` (SKILL.md, « Les PR »). Une `FRICTION` va dans le rapport
-de fin, pas dans un message, sauf si elle bloque.
+The other messages: `ALERT` (watchdog → router), `INSTRUCTION` (worker → router, see U1),
+`STATUS?` (router → a sub-agent with no news); for a PR, `READY TO MERGE`, `PR OPEN`,
+`MERGE`, `MERGED`, `REBASE`, `REBASED` (SKILL.md, "PRs"). A `FRICTION` goes in the final
+report, not in a message, unless it blocks.
 
-## Navigateur
+## Browser
 
-La consigne à ajouter au brief :
+The instruction to add to the brief:
 
-> Utilise le navigateur intégré (outils `mcp__Claude_Browser__*`), pas Claude in Chrome. Ouvre
-> **ton propre onglet** au premier plan (`tabs_create` avec `foreground: true`) et ne touche pas
-> aux onglets des autres agents. Avant chaque clic ou saisie, écris en une ligne ce que tu vas
-> faire. Capture d'écran aux moments clés, rangée dans le dossier d'échange. Aucun mot de passe,
-> aucun formulaire qui modifie des données réelles.
+> Use the built-in browser (`mcp__Claude_Browser__*` tools), not Claude in Chrome. Open
+> **your own tab** in the foreground (`tabs_create` with `foreground: true`) and do not touch
+> the other agents' tabs. Before each click or input, write in one line what you are about to
+> do. Screenshot at key moments, stored in the exchange folder. No password, no form that
+> changes real data.
 
-Les sous-agents partagent le navigateur de la session et se volent le premier plan : au-delà
-de 2 ou 3 agents qui naviguent, échelonne leur passage (dépendances de tâches). Une session,
-elle, a son propre navigateur.
+Sub-agents share the session's browser and steal the foreground from each other: beyond 2 or
+3 browsing agents, stagger their turns (task dependencies). A session has its own browser.
 
-## Pendant le travail
+## During the work
 
-- Ne demande pas « tu as fini ? » : les messages et les fins de tâche arrivent tout seuls.
-- L'Eval de chaque tâche est vérifiée par le checker, ou par toi pour la recherche et l'audit ;
-  un échec → `À CORRIGER` **au même worker**.
-- Réponds aux BLOQUÉ et aux désaccords que les agents n'arrivent pas à trancher ; une décision
-  humaine va à l'utilisateur (SKILL.md, « Règle de blocage »), et sa réponse au worker concerné.
-- Deux agents tournent en rond (plus de 3 allers-retours sur le même point) : arbitre en
-  demandant la preuve décisive, ou consigne le désaccord pour la synthèse.
-- Un `CONSIGNE —` d'un agent : mets à jour le plan, pas seulement la tâche.
+- Do not ask "are you done?": messages and task ends arrive on their own.
+- Each task's Eval is checked by the checker, or by you for research and audit; a failure →
+  `TO FIX` **to the same worker**.
+- Answer BLOCKED messages and the disagreements the agents cannot settle; a human decision
+  goes to the user (SKILL.md, "Blocking rule"), and their answer to the worker concerned.
+- Two agents going in circles (more than 3 round trips on the same point): arbitrate by asking
+  for the decisive evidence, or record the disagreement for the synthesis.
+- An `INSTRUCTION —` from an agent: update the plan, not only the task.
 
-## Après une vague
+## After a wave
 
-1. Lis tous les `<nom>.json`. Un agent sans fichier, ou en `ÉCHEC`, est un trou : signale-le,
-   ou relance-le par un message si le total du plan le permet.
-2. La suite : un agent dont le contexte sert vraiment reçoit un `SendMessage` (il reprend avec
-   tout son contexte) et écrit `<nom>-v2.json` ; sinon, un nouvel agent, compté dans le total.
-3. Synthèse : par l'agent prévu au plan, jamais par toi (`equipe.md`, étapes 3 et 6). Les
-   champs `echanges` expliquent comment les désaccords ont été tranchés.
-4. Quand tout est livré : `STOP` à tous, et attends leur `FAIT`.
+1. Read all the `<name>.json` files. An agent with no file, or in `FAILED`, is a gap: flag it,
+   or relaunch it by message if the plan's total allows.
+2. Next: an agent whose context really helps gets a `SendMessage` (it resumes with all its
+   context) and writes `<name>-v2.json`; otherwise, a new agent, counted in the total.
+3. Synthesis: by the agent planned in the plan, never by you (`team.md`, steps 3 and 6). The
+   `exchanges` fields explain how disagreements were settled.
+4. When everything is delivered: `STOP` to all, and wait for their `DONE`.
 
-Pour le code : `topologies.md` §4.
+For code: `topologies.md` §4.
 
-## Mode dégradé (agent teams non activées)
+## Degraded mode (agent teams not enabled)
 
-Les agents sont des sous-agents sans nom : ils ne peuvent pas s'écrire. Les messages passent
-**par toi** (relais), plus lentement, et par ton contexte : dis-le dans le plan.
+The agents are unnamed sub-agents: they cannot write to each other. Messages go **through
+you** (relay), more slowly, and through your context: say so in the plan.
 
-- chaque agent envoie ses messages à `main` avec `SendMessage`, première ligne
-  `POUR <nom-destinataire> : TYPE — résumé` ;
-- tu transmets chaque message au destinataire avec `SendMessage` et son identifiant d'agent
-  (reçu au lancement), sans le réécrire ;
-- un message `POUR main` est pour toi : réponds-y directement.
+- each agent sends its messages to `main` with `SendMessage`, first line
+  `FOR <recipient-name>: TYPE — summary`;
+- you pass each message to the recipient with `SendMessage` and its agent identifier
+  (received at launch), without rewriting it;
+- a `FOR main` message is for you: answer it directly.

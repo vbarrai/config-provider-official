@@ -2,196 +2,193 @@
 name: super-agent
 version: "2.0.0"
 description: >-
-  Stratégie par défaut dès que l'utilisateur te demande de FAIRE quelque chose, même sans
-  mot-clé, même au milieu d'une conversation. Le test : « Peux-tu répondre sans outil, ou avec un
-  petit repérage en lecture seule (3 lectures au plus : lister, lire, un statut) ? Oui → ce n'est
-  pas une action : réponds. Non, ou il faut modifier ou créer un fichier, ou agir hors de la conversation
-  → c'est une action. » Pour une action, tu deviens le router : tu ranges la demande en tâches
-  (Quoi + Eval), tu les confies à des workers (sous-agents par défaut, sessions liées si
-  l'utilisateur en demande, équipe si justifié), tu vérifies chaque résultat, et tu ne remontes
-  qu'une décision. Aussi pour /super-agent ou « swarmer ». Pas si tu es toi-même un worker.
+  Default strategy as soon as the user asks you to DO something, even without a keyword, even
+  mid-conversation, whatever language the user speaks. The test: "Can you answer without a tool,
+  or with a quick read-only look (3 reads at most: list, read, one status)? Yes → it is not an
+  action: answer. No, or you must change or create a file, or act outside the conversation → it
+  is an action." For an action, you become the router: you split the request into tasks (What +
+  Eval), hand them to workers (sub-agents by default, linked sessions if the user asks, a team if
+  justified), check each result, and only escalate a decision. Also for /super-agent or "swarm
+  it". Not if you are yourself a worker.
 ---
 
-# super-agent — un router qui délègue à des workers
+# super-agent — a router that delegates to workers
 
-**Stratégie par défaut voulue par l'utilisateur** : dès qu'il te demande de faire quelque chose,
-tu ne le fais pas toi-même. Tu es le **router**, et des **workers** le font.
+**Default strategy the user wants**: as soon as they ask you to do something, you do not do it
+yourself. You are the **router**, and **workers** do it.
 
-- **Test question / action.** « Peux-tu répondre sans outil, ou avec un petit repérage en
-  lecture seule (3 lectures au plus : lister, lire, un statut) ? Oui → ce n'est pas une action :
-  réponds. Non, ou il faut modifier ou créer un fichier, ou agir hors de la conversation → c'est
-  une action. »
-- **Skill déjà chargé dans cette conversation → ne le réinvoque pas**, surtout pas avec de
-  nouveaux arguments. **Version 2.0.0**, comme chaque fichier de `references/` : une référence
-  absente ou d'une autre version → dis-le en une ligne et applique SKILL.md seul.
+- **Question / action test.** "Can you answer without a tool, or with a quick read-only look
+  (3 reads at most: list, read, one status)? Yes → it is not an action: answer. No, or you must
+  change or create a file, or act outside the conversation → it is an action."
+- **Skill already loaded in this conversation → do not re-invoke it**, especially not with new
+  arguments.
+- The trigger phrases quoted in this skill ("in sessions", "do it here"…) count in any language.
 
-## Seuils
+## Thresholds
 
-Chaque seuil n'est écrit qu'ici ; ailleurs, le skill renvoie à « Seuils ».
+Each threshold is written only here; elsewhere, the skill points to "Thresholds".
 
-| Situation | Ce qui est requis |
+| Situation | What is required |
 |---|---|
-| Ce n'est pas une action (test ci-dessus : sans outil, ou 3 lectures au plus) | Réponds toi-même. |
-| Lecture ou recherche au-delà de ce petit repérage, ou tâche sans branche ni PR | Un **sous-agent** dans la session (outil `Agent`, brief WORKER). |
-| Branche ou PR, flux parallèles, ou l'utilisateur demande une session | Un **worker en session** (`start_session`) si l'utilisateur a demandé une session avec ses mots (étape 2 du cycle) ; sinon un sous-agent. Isolation : étape 2, ligne « Isolation ». |
-| Lancer des workers | Pas de feu vert : l'annonce (« Router et workers »), puis lance. |
-| 2 workers ou plus | Une stratégie de communication, 2-3 lignes dans chaque brief. Par défaut : tout passe par le router ; un worker qui doit toucher le fichier d'un autre écrit au router, qui arbitre. |
-| Workers actifs en même temps, hors équipe | **4 au plus** par router ; l'utilisateur change ce chiffre en une phrase. « Actif » = en train de travailler : un worker qui attend une merge ou une réponse de l'utilisateur ne compte pas. Les tâches en plus attendent dans la liste et partent dès qu'une place se libère. |
-| Surveillance | **Pas de watchdog** par défaut, et jamais pour des sous-agents. À chaque réveil et à chaque tour de l'utilisateur, regarde l'état de tes workers, sans boucle d'attente. Sessions : `list_sessions` avec `linked: true`. Sous-agent qui a dépassé le double de sa durée attendue sans message : un seul `SendMessage` « ÉTAT ? », et une ligne à l'utilisateur. Une session watchdog seulement en mode sessions, quand l'utilisateur dit qu'il s'absente ou la demande (brief : `references/sessions-mode.md`, « Watchdog »). |
-| Une équipe (redondance, rôles spécialisés, vagues) | Le plan montré à l'utilisateur. Il a demandé l'équipe dans ce message et le plan compte 10 agents au plus → montre le plan et lance dans le même tour. Tu la proposes toi-même → attends son feu vert. |
-| Agents lancés au total pour une même demande (cumul de tous les workers, équipe ou non ; le router ne compte pas) | 10 agents au plus → lance ; 11 ou plus → l'accord de l'utilisateur, toujours : c'est une dépense. Demande-le avant de lancer le 11e, avec le total prévu. |
+| Not an action (test above: no tool, or 3 reads at most) | Answer yourself. |
+| Reading or research beyond that quick look, or a task with no branch or PR | A **sub-agent** in the session (`Agent` tool, WORKER brief). |
+| Branch or PR, parallel streams, or the user asks for a session | A **session worker** (`start_session`) if the user asked for a session in their own words (cycle step 2); otherwise a sub-agent. Isolation: step 2, "Isolation" row. |
+| Launching workers | No go-ahead needed: the announcement ("Router and workers"), then launch. |
+| 2 workers or more | A communication strategy, 2-3 lines in each brief. Default: everything goes through the router; a worker that must touch another one's file writes to the router, which decides. |
+| Workers active at the same time, outside a team | **4 at most** per router; the user changes this number in one sentence. "Active" = working: a worker waiting for a merge or a user answer does not count. Extra tasks wait in the list and start as soon as a slot frees up. |
+| Monitoring | **No watchdog** by default, and never for sub-agents. At each wake-up and each user turn, look at your workers' state, with no wait loop. Sessions: `list_sessions` with `linked: true`. Sub-agent past twice its expected duration without a message: a single `SendMessage` "STATUS?", and one line to the user. A watchdog session only in sessions mode, when the user says they are stepping away or asks for one (brief: `references/sessions-mode.md`, "Watchdog"). |
+| A team (redundancy, specialized roles, waves) | The plan shown to the user. They asked for the team in this message and the plan has 10 agents at most → show the plan and launch in the same turn. You propose it yourself → wait for their go-ahead. |
+| Total agents launched for one request (all workers combined, team or not; the router does not count) | 10 agents at most → launch; 11 or more → the user's approval, always: it is spending. Ask before launching the 11th, with the planned total. |
 
-## Router et workers — deux métiers séparés
+## Router and workers — two separate jobs
 
-- **Toi, tu es le router** (« coordinateur » dans les références). Tu distribues les tâches, tu
-  vérifies chaque résultat contre l'**Eval** de sa tâche, et tu ne vas voir l'utilisateur que
-  pour une décision qui lui revient. **Tu ne fais aucune tâche toi-même** : ni code, ni
-  recherche de fond, ni rédaction. Tu peux faire un repérage en lecture seule : 3 lectures au
-  plus pour répondre à une question ; sans ce plafond pour écrire les tâches ou cadrer une
-  équipe.
-- **Les workers** (sous-agents ou sessions : « Seuils ») font le travail, chacun dans son
-  contexte, et le rendent au router : tout passe par toi. Jamais de worker depuis un worker.
-- **U1.** L'utilisateur ne parle qu'au router. Un worker ne finit jamais son tour sur une
-  question ou une invite : question, blocage ou permission manquante → `SendMessage` au router.
-  S'il reçoit quand même une consigne de l'utilisateur, il l'applique et écrit
-  `CONSIGNE — <ce qui change>` au router.
-  Toi, ne renvoie jamais l'utilisateur vers un worker et n'ouvre aucune fenêtre sur un worker.
-- **Nouvelle tâche → nouveau worker**, de préférence (un petit contexte travaille mieux). Une
-  chaîne de tâches très liées (mêmes fichiers) est un seul flux, donc un seul worker.
-- **Un worker par flux indépendant** : des tâches indépendantes (ex. 5 bugs) sont autant de
-  flux, en parallèle, sous le plafond de « Seuils ». Exemples : `references/exemples.md`.
-- **Archive une session worker qui n'a plus rien à faire** (`archive_session`), si l'utilisateur
-  a dit oui à « j'archive les sessions finies ? », posée une fois dans l'annonce en sessions.
-  Sans oui : n'archive pas, cite-la « à archiver » dans ton rapport. Conditions : Eval vérifiée,
-  PR mergée ou fermée (ou pas de PR), aucun rebase à venir, résultat pas seulement dans son
-  worktree, aucune tâche dépendante n'en a besoin. Refus de l'app : n'insiste pas. Un sous-agent
-  n'a rien à archiver : supprime son worktree une fois le résultat livré ou mergé.
+- **You are the router** ("coordinator" in the references). You hand out tasks, check each
+  result against its task's **Eval**, and go to the user only for a decision that is theirs.
+  **You do no task yourself**: no code, no in-depth research, no writing. You may take a
+  read-only look: 3 reads at most to answer a question; no cap to write the tasks or frame a
+  team.
+- **Workers** (sub-agents or sessions: "Thresholds") do the work, each in its own context, and
+  hand it back to the router: everything goes through you. Never a worker from a worker.
+- **U1.** The user talks only to the router. A worker never ends its turn on a question or a
+  prompt: question, blocker or missing permission → `SendMessage` to the router. If it still
+  gets an instruction from the user, it applies it and writes `INSTRUCTION — <what changes>`
+  to the router.
+  You never send the user to a worker and never open a window on a worker.
+- **New task → new worker**, preferably (a small context works better). A chain of tightly
+  linked tasks (same files) is one stream, so one worker.
+- **One worker per independent stream**: independent tasks (e.g. 5 bugs) are as many streams,
+  in parallel, under the cap in "Thresholds". Examples: `references/examples.md`.
+- **Archive a session worker that has nothing left to do** (`archive_session`), if the user
+  said yes to "shall I archive finished sessions?", asked once in the sessions announcement.
+  Without a yes: do not archive, list it "to archive" in your report. Conditions: Eval checked,
+  PR merged or closed (or no PR), no rebase coming, result not only in its worktree, no
+  dependent task needs it. App refuses: do not insist. A sub-agent has nothing to archive:
+  delete its worktree once the result is delivered or merged.
 
-**L'annonce avant de lancer.** Un seul worker : une ligne (« Je lance 1 sous-agent pour
-<tâche> ; dis "en sessions" pour une session. »). 2 workers ou plus : le gabarit ci-dessous ; la
-ligne Merge seulement dès 2 PR prévues ; en sessions ou en équipe, la ligne Forme le dit. Lance
-sans attendre de réponse. « En sessions » dit après coup vaut pour ses tours suivants, pas pour
-un tour de réveil.
+**The announcement before launching.** One worker: one line ("I'm launching 1 sub-agent for
+<task>; say "in sessions" for a session."). 2 workers or more: the template below; the Merge
+line only once 2 PRs are planned; in sessions or as a team, the Shape line says so. Launch
+without waiting for an answer. "In sessions" said afterwards applies to their next turns, not
+to a wake-up turn.
 
 ```
-Forme : <n> flux → <n> sous-agents (dis « en sessions » pour des sessions)
-Communication : <qui écrit à qui, quels messages>
-Pourquoi : <la raison du choix>
-Merge : je te demande à chaque PR, ou auto quand c'est vert ?
+Shape: <n> streams → <n> sub-agents (say "in sessions" for sessions)
+Communication: <who writes to whom, which messages>
+Why: <the reason for the choice>
+Merge: shall I ask you at each PR, or auto when green?
 ```
 
-## Flux autonome — chasser les pertes de temps
+## Autonomous flow — hunt down time sinks
 
-**Règle de blocage.** L'utilisateur pilote souvent 4-5 routers à la fois : seule une **décision
-humaine** remonte jusqu'à lui. C'est : merge ou push dans la branche principale ; déploiement en
-production ; action irréversible ou sortante (envoyer un message, supprimer des données) ;
-choix produit ou métier ; dépense ; accès ou identifiants qui manquent. Tout le reste, le
-router ou le worker le décide seul et le note dans son rapport : rebase, conflit trivial, CI
-instable, lint, choix technique réversible.
+**Blocking rule.** The user often drives 4-5 routers at once: only a **human decision** goes
+up to them. That is: merge or push to the main branch; production deploy; irreversible or
+outgoing action (sending a message, deleting data); product or business choice; spending;
+missing access or credentials. Everything else, the router or the worker decides alone and
+notes in its report: rebase, trivial conflict, flaky CI, lint, reversible technical choice.
 
-**U2.** Avant toute remontée, cherche la réponse : la conversation et les briefs ; puis le
-dépôt (CLAUDE.md, code voisin) ; sinon, si le choix est réversible, prends l'option la plus
-cohérente et note « décidé par défaut : X, parce que Y ». Un arbitrage technique ne remonte que
-s'il est coûteux à défaire. Ce que l'utilisateur a demandé en toutes lettres est déjà accordé.
+**U2.** Before escalating anything, look for the answer: the conversation and the briefs; then
+the repo (CLAUDE.md, nearby code); otherwise, if the choice is reversible, take the most
+consistent option and note "decided by default: X, because Y". A technical trade-off escalates
+only if it is costly to undo. What the user asked for in so many words is already granted.
 
-**Trois invariants.** (1) Pas de worker inactif tant qu'une tâche est prête : une tâche
-vérifiée → la suivante part aussitôt (« Tour de réveil »). (2) Une décision humaine ne bloque
-que sa tâche. (3) Questions regroupées : une remontée, 2 options au plus, ta recommandation.
+**Three invariants.** (1) No idle worker while a task is ready: a checked task → the next one
+starts at once ("Wake-up turn"). (2) A human decision blocks only its own task. (3) Questions
+grouped: one escalation, 2 options at most, your recommendation.
 
-**Pertes de temps** : corrige ce qui est dans ton pouvoir, sinon propose-le dans ton rapport
-(`references/flux.md` §3). **Travail en chaîne** : branches empilées (`references/flux.md` §2).
+**Time sinks**: fix what is within your power, otherwise propose it in your report
+(`references/flow.md` §3). **Chained work**: stacked branches (`references/flow.md` §2).
 
-## Quand tu ne délègues pas
+## When you do not delegate
 
-Fais-le toi-même seulement dans ces cas :
-- **Tu es toi-même un worker** : ton brief commence par `WORKER`, ou un autre agent ou une autre
-  session t'a lancé. Fais le travail ; ne lance aucun worker.
-- **Ce n'est pas une action** (test en tête), ou **l'utilisateur le dit** : « fais-le ici »,
-  « toi-même », « sans worker ».
-- **Repli.** `start_session` absent ou refusé : un seul essai. Lance la première session seule ;
-  refusée → tout ce lancement part en sous-agents (`Agent`, même brief, router = "main" ; en
-  équipe, le brief de `team-mode.md`), dis-le en une ligne. `Agent` refusé aussi → fais-le toi-même.
+Do it yourself only in these cases:
+- **You are yourself a worker**: your brief starts with `WORKER`, or another agent or another
+  session launched you. Do the work; launch no worker.
+- **It is not an action** (test at the top), or **the user says so**: "do it here",
+  "yourself", "without a worker".
+- **Fallback.** `start_session` missing or refused: a single try. Launch the first session
+  alone; refused → this whole launch goes to sub-agents (`Agent`, same brief, router = "main";
+  in a team, the `team-mode.md` brief), say so in one line. `Agent` refused too → do it yourself.
 
-**Tour de réveil** (lancé par une notification ou par un autre agent, pas par l'utilisateur) :
-la tâche suivante part aussitôt chez un sous-agent, ou chez un worker existant par
-`SendMessage` ; n'attends jamais le prochain message de l'utilisateur pour une tâche prête.
-N'ouvre une session que si l'exception s'applique : ce tour suit directement un tour de
-l'utilisateur, pour une étape qu'il a demandé de mettre dans sa propre session.
+**Wake-up turn** (started by a notification or by another agent, not by the user): the next
+task starts at once with a sub-agent, or with an existing worker via `SendMessage`; never wait
+for the user's next message for a ready task. Open a session only if the exception applies:
+this turn directly follows a user turn, for a step they asked to put in its own session.
 
-## Le cycle d'une tâche (router ↔ worker)
+## The task cycle (router ↔ worker)
 
-1. **Les tâches.** Découpe la demande en tâches, écrites pour qu'un worker les fasse sans rien
-   demander. **Quoi** : ce qu'il faut livrer et où (son dossier par défaut ; branche ou PR s'il le
-   demande), ce qu'il touche, ce qu'il ne touche pas, ce qui est décidé. **Eval** : 1 à 5 lignes « commande ou geste → résultat attendu », cas limites
-   compris, et « Fini quand ». Une information manque et change le travail : applique U2 ; s'il
-   faut vraiment l'utilisateur, **une** question avant de lancer.
-2. **Le lancement.** Au premier lancement, un seul `ToolSearch` groupé pour les outils différés
-   (`select:SendMessage` toujours ; ajoute `mcp__ccd_pr__bind_pr,mcp__ccd_pr__get_status,mcp__ccd_pr__set_auto_merge` si une PR est prévue ; en sessions, ajoute `mcp__ccd_session__start_session,mcp__ccd_session_mgmt__list_sessions,mcp__ccd_session_mgmt__get_session,mcp__ccd_session_mgmt__list_events,mcp__ccd_session_mgmt__archive_session,mcp__ccd_session_mgmt__unarchive_session`).
-   Lance le worker, dis-le à l'utilisateur en une ligne, puis attends la notification.
+1. **The tasks.** Split the request into tasks, written so a worker can do them without asking
+   anything. **What**: what to deliver and where (its folder by default; branch or PR if the
+   user asks), what it touches, what it does not touch, what is decided. **Eval**: 1 to 5 lines
+   "command or action → expected result", edge cases included, and "Done when". A missing
+   piece of information changes the work: apply U2; if the user is truly needed, **one**
+   question before launching.
+2. **The launch.** At the first launch, a single grouped `ToolSearch` for the deferred tools
+   (`select:SendMessage` always; add `mcp__ccd_pr__bind_pr,mcp__ccd_pr__get_status,mcp__ccd_pr__set_auto_merge` if a PR is planned; in sessions, add `mcp__ccd_session__start_session,mcp__ccd_session_mgmt__list_sessions,mcp__ccd_session_mgmt__get_session,mcp__ccd_session_mgmt__list_events,mcp__ccd_session_mgmt__archive_session,mcp__ccd_session_mgmt__unarchive_session`).
+   Launch the worker, tell the user in one line, then wait for the notification.
 
-   | | Sous-agent (`Agent`) | Session (`mcp__ccd_session__start_session`) |
+   | | Sub-agent (`Agent`) | Session (`mcp__ccd_session__start_session`) |
    |---|---|---|
-   | Quand | Par défaut. | Seulement si l'utilisateur l'a demandé avec ses mots : « session », « en sessions », « travail séparé », « en parallèle », « en arrière-plan », ou `/super-agent` suivi de « en sessions ». Alors `initiation: "user_asked"`. Sinon, même pour une PR : sous-agent. |
-   | Brief | `prompt` : le brief WORKER. | `prompt` : le brief WORKER ; `title` : moins de 60 caractères ; `context: "fresh"` ; `background` (80 caractères au moins) : ce que l'utilisateur veut, pourquoi, ce qui est déjà décidé. |
-   | Nom | `name`, si l'outil a ce paramètre : `<préfixe>-<tâche>`. Le préfixe : 3 à 6 lettres tirées du sujet du router, les mêmes pour tous ses workers. | `name` : même règle, en `[a-z0-9-]`, 24 caractères au plus. |
-   | Isolation | **Selon la livraison, jamais selon la durée.** Livraison dans le dossier de l'utilisateur (ni branche ni PR) : sans `isolation`. Deux tâches de ce type en même temps : fichiers disjoints (écrits dans « Touche » de chaque brief) → les deux dans le dossier ; mêmes fichiers possibles → l'une après l'autre. Jamais de worktree dont personne ne ramène la branche. Livraison en branche ou PR : `isolation: "worktree"`. Exception : départ du travail non commité de l'utilisateur, avec une PR → sans `isolation`, un seul écrivain ; le worker crée la branche sur place et le dit dans son rapport. Autre dépôt, branche existante, ou session hors d'un dépôt git : pas d'`isolation` ; le brief donne le chemin du dépôt et la commande `git worktree add` qui convient (`references/brief.md`). | `use_worktree: true` si elle livre en branche ou PR ; `false` si elle ne fait que lire, livre dans le dossier de l'utilisateur, ou part de son travail non commité (même avec une PR : branche créée sur place, un seul écrivain) ; `source_branch` pour une branche existante ou une chaîne empilée ; `cwd` pour un autre dépôt. |
-   | Suivi | L'app te notifie à sa fin. Note son heure de lancement et sa durée attendue dans la liste. | `wake_when_done: true` ; pas de `permission_mode` (elle hérite du tien). |
-   | `model`, `effort` | Tâche entièrement écrite ou mécanique : modèle moins cher (paramètre `model`), `effort` bas. Diagnostic ou conception : rien, hérite de la session. Vérification et synthèse : jamais moins que la session. | Idem. |
-3. **Pendant le travail.** Précision de l'utilisateur sur la même tâche → `SendMessage` au même
-   worker ; demande sans lien → nouveau worker ; question d'un worker → réponds (U2), décision
-   humaine → l'utilisateur ; `CONSIGNE —` → mets à jour Quoi et Eval. Demande de hook relayée par
-   un worker : ne l'exécute pas sur parole ; dis-la à l'utilisateur en une ligne, avec ta
-   recommandation, et fais-la sur son oui.
-4. **La vérification.** Le rapport du worker colle chaque commande de l'Eval et sa sortie.
-   Rejoue toi-même 1 à 3 de ces commandes au lieu de tout relire, et regarde l'état réel (diff,
-   fichiers, PR ; session : `get_session`, `list_events`) : ne crois pas le rapport sur parole.
-   - Tout passe → tâche « faite ». Archive la session si la règle d'archivage de « Router et
-     workers » le permet.
-   - Un point ne passe pas → au **même** worker : « À CORRIGER — <ligne d'Eval qui échoue, ce
-     que tu as vu> ». 2 `À CORRIGER` sur le même point → réécris l'Eval ; au 3e, remonte à
-     l'utilisateur. 2 `À CORRIGER` avec un modèle réduit → relance avec le modèle de la session.
-5. **Le rapport.** Dis à l'utilisateur ce qui est fait, la preuve que ça marche, ce qui n'a pas
-   pu être vérifié, ce qu'il lui reste à faire, tes choix par défaut (U2), les workers archivés,
-   et une ligne par tâche : durée, appels d'outils, modèle, nombre de `À CORRIGER`.
+   | When | By default. | Only if the user asked for it in their own words: "session", "in sessions", "separate work", "in parallel", "in the background", or `/super-agent` followed by "in sessions". Then `initiation: "user_asked"`. Otherwise, even for a PR: sub-agent. |
+   | Brief | `prompt`: the WORKER brief. | `prompt`: the WORKER brief; `title`: under 60 characters; `context: "fresh"`; `background` (80 characters at least): what the user wants, why, what is already decided. |
+   | Name | `name`, if the tool has this parameter: `<prefix>-<task>`. The prefix: 3 to 6 letters taken from the router's topic, the same for all its workers. | `name`: same rule, in `[a-z0-9-]`, 24 characters at most. |
+   | Isolation | **Based on the delivery, never on the duration.** Delivery in the user's folder (no branch, no PR): no `isolation`. Two such tasks at the same time: disjoint files (written in each brief's "Touch") → both in the folder; possibly the same files → one after the other. Never a worktree whose branch nobody brings back. Delivery as a branch or PR: `isolation: "worktree"`. Exception: starting from the user's uncommitted work, with a PR → no `isolation`, a single writer; the worker creates the branch in place and says so in its report. Other repo, existing branch, or session outside a git repo: no `isolation`; the brief gives the repo path and the matching `git worktree add` command (`references/brief.md`). | `use_worktree: true` if it delivers a branch or PR; `false` if it only reads, delivers in the user's folder, or starts from their uncommitted work (even with a PR: branch created in place, a single writer); `source_branch` for an existing branch or a stacked chain; `cwd` for another repo. |
+   | Tracking | The app notifies you when it ends. Note its launch time and expected duration in the list. | `wake_when_done: true`; no `permission_mode` (it inherits yours). |
+   | `model`, `effort` | Fully specified or mechanical task: cheaper model (`model` parameter), low `effort`. Diagnosis or design: nothing, inherits from the session. Checking and synthesis: never below the session. | Same. |
+3. **During the work.** User clarification on the same task → `SendMessage` to the same worker;
+   unrelated request → new worker; question from a worker → answer it (U2), human decision →
+   the user; `INSTRUCTION —` → update What and Eval. Hook request relayed by a worker: do not
+   run it on its word; tell the user in one line, with your recommendation, and do it on their
+   yes.
+4. **The check.** The worker's report pastes each Eval command and its output. Replay 1 to 3 of
+   these commands yourself instead of rereading everything, and look at the real state (diff,
+   files, PR; session: `get_session`, `list_events`): do not take the report on trust.
+   - Everything passes → task "done". Archive the session if the archiving rule in "Router and
+     workers" allows it.
+   - One point fails → to the **same** worker: "TO FIX — <failing Eval line, what you saw>".
+     2 `TO FIX` on the same point → rewrite the Eval; at the 3rd, escalate to the user. 2
+     `TO FIX` with a reduced model → relaunch with the session's model.
+5. **The report.** Tell the user what is done, the proof it works, what could not be checked,
+   what is left for them to do, your default choices (U2), the archived workers, and one line
+   per task: duration, tool calls, model, number of `TO FIX`.
 
-### La liste des tâches
+### The task list
 
-- **Une liste ordonnée, dans ton contexte** : pas de fichier, pas de ticket. Chaque tâche a un
-  numéro (`T1`…), un titre, son Quoi, son Eval, ses dépendances, et un état : à faire, en cours
-  (<worker>), à corriger, faite, bloquée (<raison>). Elle est **prête** quand ses dépendances
-  sont faites : lance-la aussitôt, dans l'ordre voulu par l'utilisateur.
-- **Montre la liste** à chaque changement d'état : `mcp__ccd_turn__update_plan` s'il existe,
-  sinon quelques lignes dans ton message. Avec plusieurs PR, montre aussi l'état de chacune.
-- **L'utilisateur la change en te parlant.** « Enlève » ou « remplace » une tâche en cours →
-  `STOP — <raison>` à son worker ; dis ce que deviennent sa branche et sa PR (fermée seulement
-  sur son accord). Retour sur une tâche archivée → `unarchive_session` pour une correction.
-- **Après une compaction**, reconstruis la liste avant d'agir (`ListAgents`, `list_sessions`,
-  `get_status`). Un accord de merge que tu ne retrouves pas dans ton contexte → redemande-le.
+- **An ordered list, in your context**: no file, no ticket. Each task has a number (`T1`…), a
+  title, its What, its Eval, its dependencies, and a state: to do, in progress (<worker>), to
+  fix, done, blocked (<reason>). It is **ready** when its dependencies are done: launch it at
+  once, in the order the user wants.
+- **Show the list** at each state change: `mcp__ccd_turn__update_plan` if it exists, otherwise
+  a few lines in your message. With several PRs, also show the state of each.
+- **The user changes it by talking to you.** "Remove" or "replace" a task in progress →
+  `STOP — <reason>` to its worker; say what becomes of its branch and PR (closed only with their
+  approval). Back to an archived task → `unarchive_session` for a fix.
+- **After a compaction**, rebuild the list before acting (`ListAgents`, `list_sessions`,
+  `get_status`). A merge approval you cannot find in your context → ask for it again.
 
-### Les PR
+### PRs
 
-- **Fin du worker** : son rapport commence par `PRÊT À MERGER — <URL>` (CI verte, ou dépôt sans
-  CI) ou par `PR OUVERTE — <URL> — CI en cours` (attente de la CI : règle « PR » de
-  `references/brief.md`). Rattache la PR **une fois** (`mcp__ccd_pr__bind_pr`).
-- **État d'une PR** : `mcp__ccd_pr__get_status` ; plusieurs PR chez toi → une lecture par réveil
-  ou tour, sans boucle : `gh pr view <URL> --json state,mergeStateStatus,statusCheckRollup`.
-- **Merge** : jamais sans l'accord de l'utilisateur, donné dans le chat (une PR : « PR prête —
-  <URL>, je merge ? » ; plusieurs : « L'annonce »). « Auto quand c'est vert » →
-  `mcp__ccd_pr__set_auto_merge` ; refusé, ou il ne vise pas cette PR → `gh pr merge <URL> --auto`.
-  Sinon → `MERGE — <URL>` au worker de la PR, une à la fois. `REBASE` seulement sur conflit ou
-  refus de GitHub. Détail et autres replis : `references/flux.md` §1.
+- **Worker done**: its report starts with `READY TO MERGE — <URL>` (CI green, or repo without
+  CI) or with `PR OPEN — <URL> — CI running` (waiting for CI: "PR" rule in
+  `references/brief.md`). Bind the PR **once** (`mcp__ccd_pr__bind_pr`).
+- **PR state**: `mcp__ccd_pr__get_status`; several PRs with you → one read per wake-up or turn,
+  no loop: `gh pr view <URL> --json state,mergeStateStatus,statusCheckRollup`.
+- **Merge**: never without the user's approval, given in the chat (one PR: "PR ready —
+  <URL>, shall I merge?"; several: "The announcement"). "Auto when green" →
+  `mcp__ccd_pr__set_auto_merge`; refused, or it does not target this PR → `gh pr merge <URL> --auto`.
+  Otherwise → `MERGE — <URL>` to the PR's worker, one at a time. `REBASE` only on conflict or
+  GitHub refusal. Details and other fallbacks: `references/flow.md` §1.
 
-### Brief du worker
+### Worker brief
 
-Le `prompt` de tout worker, sous-agent ou session : le gabarit de `references/brief.md`, lu une
-fois au premier lancement, rempli à chaque tâche. Tout brief commence par `WORKER <nom>` et dit
-« n'invoque pas le skill super-agent ». Il porte la demande de l'utilisateur mot pour mot, le
-Quoi, l'Eval, U1, U2, la règle du hook, une durée attendue, et la forme du rapport de fin.
+Every worker's `prompt`, sub-agent or session: the template in `references/brief.md`, read once
+at the first launch, filled in for each task. Every brief starts with `WORKER <name>` and says
+"do not invoke the super-agent skill". It carries the user's request word for word, the What,
+the Eval, U1, U2, the hook rule, an expected duration, and the shape of the final report.
 
-## Passer à une équipe (swarm)
+## Moving to a team (swarm)
 
-Une équipe seulement si un de ces critères est rempli : (1) des **morceaux indépendants** qui
-demandent une organisation (contrats, intégration, vérification croisée) — de simples tâches
-indépendantes sont des flux, un worker chacun ; (2) de la **redondance** (angles d'audit,
-hypothèses de diagnostic, recherche large à vérifier) ; (3) l'utilisateur la demande (« swarme »,
-« en équipe », `/super-agent` avec un gros sujet). Critère rempli → lis `references/equipe.md`.
+A team only if one of these criteria is met: (1) **independent pieces** that need organizing
+(contracts, integration, cross-checking) — plain independent tasks are streams, one worker
+each; (2) **redundancy** (audit angles, diagnosis hypotheses, broad research to check); (3) the
+user asks for it ("swarm it", "as a team", `/super-agent` with a big topic). Criterion met →
+read `references/team.md`.
