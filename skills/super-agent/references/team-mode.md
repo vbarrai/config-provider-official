@@ -1,12 +1,12 @@
-# Launching and following the team — sub-agents mode (default)
+# Launching and following the team — base for both modes
 
-The agents are **sub-agents of this session** and **talk to each other during the work**
-(`SendMessage`), without waiting for the end of a wave. In sessions mode, also read
-`sessions-mode.md`.
+In sub-agents mode (the fallback), the agents are **sub-agents of this session** and **talk to each other during the work**
+(`SendMessage`), without waiting for the end of a wave. In sessions mode (the default),
+also read `sessions-mode.md`: it says what changes.
 
 The **swarm-view** mod shows the team in a "Swarm" panel, opened at the first agent launched
 or by `/swarm-view`. Mod missing: say so once at the start; the agents are then visible only
-in the session's task list. U1: do not invite the user to write to an agent.
+in the session's task list. U1: the router stays the user's normal contact.
 
 ## Prerequisite: named agents (step 0 of `team.md`)
 

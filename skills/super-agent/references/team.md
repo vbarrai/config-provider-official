@@ -5,11 +5,11 @@ rule and fallback: SKILL.md; they also apply to the team.
 
 ## Step 0 — Choose the mode and check its prerequisites (always, first)
 
-- **Sub-agents mode** (default): it needs *agent teams* (named agents): do the
-  "Check before launching" of `team-mode.md`.
-- **Sessions mode**: only if the user asked for sessions in their own words (SKILL.md,
-  "The task cycle", step 2, "When" row). `mcp__ccd_session__start_session` missing (after
-  `ToolSearch`) or refused: sub-agents mode (SKILL.md fallback).
+- **Sessions mode** (default; SKILL.md, "The task cycle", step 2, "When" row).
+  `mcp__ccd_session__start_session` missing (after `ToolSearch`) or refused: sub-agents mode
+  (SKILL.md fallback).
+- **Sub-agents mode** (fallback, or if the user asks): it needs *agent teams* (named agents):
+  do the "Check before launching" of `team-mode.md`.
 - **Fast mode** (`Workflow` tool): only if the user asks for it. Load the `workflow-authoring`
   skill before writing any script.
 
@@ -27,7 +27,7 @@ In 6 lines at most:
    everything else: it goes at the top of `plan.md` and of each brief.
 
 Take an **inline look** if the split depends on it: you need to know the items to share out.
-No 3-read cap, but in-depth research goes to a sub-agent.
+No 3-read cap, but in-depth research goes to a worker.
 
 A missing piece of information changes the split: **one** precise question. Otherwise, move on.
 
@@ -80,7 +80,7 @@ Open `topologies.md` at the family's section and build the plan:
   who then hand in raw material (`MATERIAL` schema) and do not write. Otherwise, each
   executor writes its part.
 - **Synthesis**: always an agent, never you (with writers: the lead writer `writer-1`),
-  following the merge rule (step 6). Short deliverable: a sub-agent is enough.
+  following the merge rule (step 6). Short deliverable: a single agent is enough.
 - **Deliverable**: a single format, set now (markdown report, branch + diff, comparison table,
   answer in the chat), the one that best serves the end criterion.
 
@@ -96,7 +96,7 @@ Present the plan in this format:
 ```
 Goal: <one sentence> — examples: <2 to 3 topics> — not a topic: <…>
 Family: <family> — pattern: <pattern> (+ open goal, if open)
-Mode: sub-agents (in this session) | sessions (linked native sessions) | fast (Workflow)
+Mode: sessions (linked native sessions) | sub-agents (in this session) | fast (Workflow)
 Communication: <who writes to whom, and for what>
 Roles: router (me) — <n> workers — <merger, checker, tester, reproducer, watchdog: those kept, with each one's need> | no specialized role
 Deliverable: <format>

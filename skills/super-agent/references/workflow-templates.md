@@ -211,4 +211,4 @@ return { changes: done, integration: integ, review, missing: args.plan.tasks.len
 
 Blocked task or red tests: do not relaunch in a loop. Report, and propose either a fix wave
 (within the plan's total and the approval threshold in "Thresholds"), or a takeover by a
-single worker (sub-agent) that chains the tasks.
+single worker that chains the tasks.

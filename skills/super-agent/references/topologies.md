@@ -60,7 +60,7 @@ rephrase them before launching.
 confirmed by 3 agents without evidence stays "unconfirmed".
 
 **Default deliverable**: answer in the chat or a short report: cause, evidence, proposed fix.
-If the fix is code: it fits in one worker → a sub-agent, no second plan; otherwise, chain into
+If the fix is code: it fits in one worker → a single worker, no second plan; otherwise, chain into
 pattern 4 (new plan, shown to the user: `team.md`, step 4).
 
 **Pitfall**: in production, no agent acts (restart, write, purge). Read-only.
@@ -73,7 +73,7 @@ For code that can be split into pieces with disjoint files.
    (signatures, types, exchange formats), splits into tasks and gives each a **disjoint** list
    of files. Returns a `CONTRACT_PLAN`. Unavoidable shared file or tight coupling →
    `separable: false` and **the swarm stops**: `STOP` to the roles already launched, and
-   propose a single worker (sub-agent) that chains the tasks. Otherwise, show this split to
+   propose a single worker that chains the tasks. Otherwise, show this split to
    the user and go on without waiting, unless the launch is still waiting for their go-ahead
    (`team.md`, step 4).
 2. **Implementation** (1 worker per task, `isolation: 'worktree'`): it changes only its files,
@@ -189,7 +189,7 @@ the agent total. You do none of these jobs.
 | **Merger** (the "integrator" of §4) | The branches must be tested together before any PR. | `INTEGRATION` |
 | **Checker** (in §1 and §2: the "checker" or "counter-expert") | A result to accept that you cannot check yourself by replaying 1 to 3 commands. | `VERDICT` per task |
 | **Tester** (as work goes, before the merge) | An interface or flows to click through that the workers cannot test themselves. | `VERDICT` |
-| **Reproducer** | A bug to reproduce, or a long run on an app that can be launched locally. Launch it when the need appears (sub-agent), not in advance. | `HYPOTHESIS` (cause and evidence) and, if it fixes, `CHANGESET` |
+| **Reproducer** | A bug to reproduce, or a long run on an app that can be launched locally. Launch it when the need appears, not in advance. | `HYPOTHESIS` (cause and evidence) and, if it fixes, `CHANGESET` |
 | **Watchdog** | The only case written in "Thresholds" (SKILL.md). Brief: `sessions-mode.md`, "Watchdog". | `ALERT` messages |
 
 The workers return the family's schema (`FINDING`, `HYPOTHESIS`, `CHANGESET`, `MATERIAL`).

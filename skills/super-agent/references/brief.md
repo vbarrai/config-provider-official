@@ -1,6 +1,6 @@
 # Worker brief
 
-The `prompt` of every worker, sub-agent (`Agent`) or session (`start_session`). Fill in the
+The `prompt` of every worker, session (`start_session`) or sub-agent (`Agent`). Fill in the
 `<…>` for each task; remove no rule, except the "PR" rule when the task has no PR.
 
 - The first line is `WORKER <name>`, exactly: a worker recognizes itself by it.
@@ -46,10 +46,10 @@ Done when: <one sentence>
 
 Rules:
 - Follow the repo's instructions (CLAUDE.md, AGENTS.md, repo skills) and the user's.
-- U1. The user talks only to the router. A worker never ends its turn on a question or a
-  prompt: question, blocker or missing permission → `SendMessage` to the router. If it still
-  gets an instruction from the user, it applies it and writes `INSTRUCTION — <what changes>`
-  to the router.
+- U1. The router is the user's normal contact. A worker never ends its turn on a question
+  or a prompt to the user: question, blocker or missing permission → `SendMessage` to the
+  router. The user may still open a worker session and write in it: the worker applies the
+  instruction and writes `INSTRUCTION — <what changes>` to the router.
 - U2. Before escalating anything, look for the answer: the conversation and the briefs; then
   the repo (CLAUDE.md, nearby code); otherwise, if the choice is reversible, take the most
   consistent option and note "decided by default: X, because Y". A technical trade-off escalates

@@ -1,9 +1,9 @@
 # Sessions mode — what changes
 
-**Only if the user asked for sessions in their own words** (`team.md`, step 0). Each agent in
+**The default team mode** (`team.md`, step 0). Each agent in
 the plan is a **real session** linked to this one, and they talk through `SendMessage`. All of
-`team-mode.md` applies here, except its prerequisites, its launch and its degraded mode. U1:
-open no window on a session.
+`team-mode.md` applies here, except its prerequisites, its launch and its degraded mode. Link each
+session in your messages (U1); open no split view unless the user asks.
 
 ## What to know before launching
 
@@ -15,8 +15,7 @@ open no window on a session.
   permission mode family: **do not change the mode** of the sessions you launch (no
   `permission_mode`: they inherit yours). Otherwise they stay stuck waiting for an approval
   that Desktop cannot show.
-- **No new session from a wake-up turn** (rule and exception: SKILL.md, "Wake-up turn"). For a
-  next wave, **reuse the existing sessions** by message, or launch a sub-agent.
+- **A wake-up turn may not open a session** (SKILL.md, "Wake-up turn"). For a next wave, **reuse the existing sessions** by message, or launch a sub-agent.
 - **Your own name**: the sessions must be able to reach you. Before launching, call
   `ListAgents`: the line that designates you gives your name. Write it in `plan.md` and in
   each brief ("Coordinator" line). Not found: write in the brief "to reach the coordinator,
