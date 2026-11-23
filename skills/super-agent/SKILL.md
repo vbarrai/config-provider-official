@@ -37,6 +37,7 @@ Each threshold is written only here; elsewhere, the skill points to "Thresholds"
 | 2 workers or more | A communication strategy, 2-3 lines in each brief. Default: everything goes through the router; a worker that must touch another one's file writes to the router, which decides. |
 | Workers active at the same time, outside a team | **4 at most** per router; the user changes this number in one sentence. "Active" = working: a worker waiting for a merge or a user answer does not count. Extra tasks wait in the list and start as soon as a slot frees up. |
 | Monitoring | **No watchdog** by default, and never for sub-agents. At each wake-up and each user turn, look at your workers' state, with no wait loop. Sessions: `list_sessions` with `linked: true`. Sub-agent past twice its expected duration without a message: a single `SendMessage` "STATUS?", and one line to the user. A watchdog session only in sessions mode, when the user says they are stepping away or asks for one (brief: `references/sessions-mode.md`, "Watchdog"). |
+| Review of a checked task (cycle step 4) | Always, by criticality. Low (small reversible change, doc, research with no lasting deliverable): 1 reviewer. Medium (code, PR, config, several files): 2 reviewers, different angles. High (prod, security, data, money, irreversible or public action, shared infra): 3 reviewers or more, and a counter-expertise of each serious finding, prompted to refute. Reviewers count in the agent total below. In a team, its planned checking (checker, counter-expert) is this review: do not double it. |
 | A team (redundancy, specialized roles, waves) | The plan shown to the user. They asked for the team in this message and the plan has 10 agents at most → show the plan and launch in the same turn. You propose it yourself → wait for their go-ahead. |
 | Total agents launched for one request (all workers combined, team or not; the router does not count) | 10 agents at most → launch; 11 or more → the user's approval, always: it is spending. Ask before launching the 11th, with the planned total. |
 
@@ -101,8 +102,8 @@ grouped: one escalation, 2 options at most, your recommendation.
 ## When you do not delegate
 
 Do it yourself only in these cases:
-- **You are yourself a worker**: your brief starts with `WORKER`, or another agent or another
-  session launched you. Do the work; launch no worker.
+- **You are yourself a worker**: your brief starts with `WORKER` or `REVIEWER`, or another
+  agent or another session launched you. Do the work; launch no worker.
 - **It is not an action** (test at the top), or **the user says so**: "do it here",
   "yourself", "without a worker".
 - **Fallback.** `start_session` missing or refused: a single try. Launch the first session
@@ -142,8 +143,15 @@ this turn directly follows a user turn, for a step they asked to put in its own 
 4. **The check.** The worker's report pastes each Eval command and its output. Replay 1 to 3 of
    these commands yourself instead of rereading everything, and look at the real state (diff,
    files, PR; session: `get_session`, `list_events`): do not take the report on trust.
-   - Everything passes → task "done". Archive the session if the archiving rule in "Router and
-     workers" allows it.
+   - Everything passes → critical review, then task "done". Archive the session if the
+     archiving rule in "Router and workers" allows it.
+   - **Critical review**: always launch the reviewers set in "Thresholds", each a separate
+     sub-agent (`Agent`), in parallel, read-only, with the `REVIEWER` brief
+     (`references/brief.md`). Each gets the user's request word for word and the deliverable
+     (diff, PR, files, path), NOT the worker's report or your opinion. Check each finding
+     yourself: confirmed → `TO FIX` to the original worker; it changes the approach (simpler
+     solution, already done elsewhere) → decide if reversible (U2), otherwise escalate with
+     your recommendation. After the fix, 1 reviewer rechecks only the fixed points.
    - One point fails → to the **same** worker: "TO FIX — <failing Eval line, what you saw>".
      2 `TO FIX` on the same point → rewrite the Eval; at the 3rd, escalate to the user. 2
      `TO FIX` with a reduced model → relaunch with the session's model.

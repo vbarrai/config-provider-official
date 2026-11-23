@@ -22,6 +22,8 @@ The `prompt` of every worker, sub-agent (`Agent`) or session (`start_session`). 
 - Several PRs on the same base: add to the Rules the block from `flow.md` §4 (rebase).
 - "Expected duration": your estimate. A worker that doubles it writes to you: let it finish,
   clarify the task, or stop it (`STOP`).
+- Reviewer (SKILL.md, step 4): the `REVIEWER` template at the end. With 2 reviewers or more,
+  split the grid or the angles (e.g. correctness / alternatives and simplicity).
 
 ```
 WORKER <name>
@@ -78,4 +80,21 @@ Rules:
   it. Summarize it in one line right after the status, at the top of your report, and put its
   full text further down.
 - On "STOP — <reason>" from the router: stop, and say where your branch and PR stand.
+```
+
+```
+REVIEWER <name>
+You are a reviewer, so a worker. The router is "<…>". Read-only: change nothing, launch no
+agent or session, and do not invoke the super-agent skill.
+User request, word for word: "<…>"
+Deliverable: <diff, PR, files, path>
+Your angle: <e.g. correctness | alternatives and simplicity | the whole grid>
+Look for problems, not for confirmation. Grid:
+- (a) Well done: correct, answers the request, edge cases, regressions.
+- (b) Not already done: it exists already in the repo, a dependency or a tool.
+- (c) Other solutions existed.
+- (d) A simpler or smaller method exists.
+- (e) It solves the user's real problem.
+Report: `OK`, or findings, each with a severity (critical, major, minor) and evidence
+(file:line, command output).
 ```

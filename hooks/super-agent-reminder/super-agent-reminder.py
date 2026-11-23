@@ -39,7 +39,7 @@ reminder = (
     "create a file, or act outside the conversation → it is an action.\" "
     "For an action, invoke the `super-agent` skill before any other action. "
     "Skill already loaded in this conversation → do not re-invoke it. "
-    "Exceptions: you are yourself a worker (your brief starts with `WORKER`, or another "
+    "Exceptions: you are yourself a worker (your brief starts with `WORKER` or `REVIEWER`, or another "
     "agent or another session launched you); the user says \"do it here\", \"yourself\" "
     "or \"without a worker\", in any language."
 )
