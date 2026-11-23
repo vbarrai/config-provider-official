@@ -28,8 +28,8 @@ different repos have no shared queue.
 - **`bind_pr` fails or is refused**: no auto-merge on that PR. Give its link in your report and
   ask the user for the merge, in batches.
 - **After a merge**, even if the base moves without you (other routers, colleagues):
-  `REBASE — <base branch> moved (PR <URL> merged)` goes to the workers "Smooth flow" calls for
-  (SKILL.md), at least the one whose PR is in conflict, or whose merge GitHub refuses (up-to-date
+  `REBASE — <base branch> moved (PR <URL> merged)` goes to the workers whose PR the moved base
+  affects, at least the one whose PR is in conflict, or whose merge GitHub refuses (up-to-date
   branch required), and a stacked branch (§2).
 - **Failed rebase or red CI**: the PR leaves the head of the queue, the next one goes first.
 - **After a batch of merges**, look at the base's CI: two PRs green separately can break
@@ -84,6 +84,6 @@ To add to the brief's "Rules" (`brief.md`), which already carry the "MERGE —" 
   "REBASED — <PR URL> — tests: <result>".
   The app's `sync_with_base_branch` tool does a merge, not a rebase: use it only if the repo
   forbids force-push, and say so in your answer.
-- Without "REBASE —" from the router, do not rebase on your own: the base can move without
-  your PR being affected.
+- Without "REBASE —" from the router, rebase only if your PR needs it (conflict, red CI): the
+  base can move without your PR being affected.
 ```

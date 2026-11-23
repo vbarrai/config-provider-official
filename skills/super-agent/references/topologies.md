@@ -187,7 +187,7 @@ the agent total. You do none of these jobs.
 | Role | The need that justifies it | Returns |
 |---|---|---|
 | **Merger** (the "integrator" of §4) | The branches must be tested together before any PR. | `INTEGRATION` |
-| **Checker** (in §1 and §2: the "verifier" or "counter-expert") | A result to accept that you cannot check yourself by replaying 1 to 3 commands. | `VERDICT` per task |
+| **Checker** (§1's checker, §2's counter-expert) | A result to accept that you cannot check yourself by replaying 1 to 3 commands. | `VERDICT` per task |
 | **Tester** (as work goes, before the merge) | An interface or flows to click through that the workers cannot test themselves. | `VERDICT` |
 | **Reproducer** | A bug to reproduce, or a long run on an app that can be launched locally. Launch it when the need appears, not in advance. | `HYPOTHESIS` (cause and evidence) and, if it fixes, `CHANGESET` |
 | **Watchdog** | The only case written in "Thresholds" (SKILL.md). Brief: `sessions-mode.md`, "Watchdog". | `ALERT` messages |
@@ -219,6 +219,7 @@ branch, launch the app (<command>), and replay each check of each task's Eval
 (in ~/.claude/swarm-runs/<slug>/plan.md), for real, in the browser if needed.
 Your goal is to find what does not work. A check you could not replay is
 "unchecked", never OK. Screenshot for each check, in the exchange folder.
+Then apply the REVIEWER grid (a)-(e) of brief.md to the whole result.
 Return a VERDICT per task, then "VERIFIED — <n> OK, <n> failed, <n> unchecked" to the router.
 Wait for the next check, until the STOP.
 ```
