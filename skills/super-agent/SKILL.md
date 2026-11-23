@@ -22,7 +22,7 @@ yourself. You are the **router**, and **workers** do it.
   change or create a file, or act outside the conversation → it is an action."
 - **Skill already loaded in this conversation → do not re-invoke it**, especially not with new
   arguments.
-- The trigger phrases quoted in this skill ("in sessions", "do it here"…) count in any language.
+- The trigger phrases quoted in this skill ("sub-agents", "do it here"…) count in any language.
 
 ## Thresholds
 
@@ -68,13 +68,13 @@ Each threshold is written only here; elsewhere, the skill points to "Thresholds"
   delete its worktree once the result is delivered or merged.
 
 **The announcement before launching.** One worker: one line ("I'm launching 1 session for
-<task>: <link>; say "sub-agents" for a sub-agent. Shall I archive finished sessions?"). 2
-workers or more: the template below; the Merge line only once 2 PRs are planned; as a team,
-the Shape line says so. Launch without waiting for an answer. "Sub-agents" said afterwards
-applies to their next turns.
+<task>; say "sub-agents" for a sub-agent. Shall I archive finished sessions?"). 2 workers or
+more: the template below; the Merge line only once 2 PRs are planned; as a team, the Shape
+line says so. Launch without waiting for an answer, then give the session links. "Sub-agents"
+said afterwards applies to their next turns.
 
 ```
-Shape: <n> streams → <n> sessions: <links> (say "sub-agents" for sub-agents)
+Shape: <n> streams → <n> sessions (say "sub-agents" for sub-agents)
 Archive: shall I archive finished sessions?
 Communication: <who writes to whom, which messages>
 Why: <the reason for the choice>
@@ -97,6 +97,10 @@ only if it is costly to undo. What the user asked for in so many words is alread
 **Three invariants.** (1) No idle worker while a task is ready: a checked task → the next one
 starts at once ("Wake-up turn"). (2) A human decision blocks only its own task. (3) Questions
 grouped: one escalation, 2 options at most, your recommendation.
+
+**Smooth flow.** Anticipate and prepare the next steps yourself (what comes right after a
+merge, a review, a user answer), so the user only has to decide, with no wait and no manual
+step. Invent the organization each situation needs: this skill gives the goal, not a recipe.
 
 **Time sinks**: fix what is within your power, otherwise propose it in your report
 (`references/flow.md` §3). **Chained work**: stacked branches (`references/flow.md` §2).
@@ -192,7 +196,7 @@ context, otherwise a sub-agent, and one line to the user. Reviewers often start 
 ### Worker brief
 
 Every worker's `prompt`, session or sub-agent: the template in `references/brief.md`, read once
-at the first launch, filled in for each task. Every brief starts with `WORKER <name>` and says
+at the first launch, filled in for each task. Every brief starts with `WORKER <name>` (reviewer: `REVIEWER <name>`) and says
 "do not invoke the super-agent skill". It carries the user's request word for word, the What,
 the Eval, U1, U2, the hook rule, an expected duration, and the shape of the final report.
 

@@ -11,7 +11,7 @@ API reminders (details in the `workflow-authoring` skill):
 - `pipeline()` by default; a `parallel()` barrier only when a step needs **all** the previous
   results (deduplication, synthesis, cross-refutation).
 - `log()` everything that is dropped or truncated.
-- Each `agent()` prompt starts with `WORKER <id>`, like every brief in the skill, and says not
+- Each `agent()` prompt starts with `WORKER <id>`, like every worker brief in the skill, and says not
   to invoke the super-agent skill: the skeletons pass their prompts through the
   `worker(id, prompt)` wrapper, to paste at the top of the script:
   ``const worker = (id, p) => `WORKER ${id}\nYou are a worker: launch no agent and do not invoke the super-agent skill.\n${p}`;``

@@ -3,7 +3,8 @@
 The `prompt` of every worker, session (`start_session`) or sub-agent (`Agent`). Fill in the
 `<…>` for each task; remove no rule, except the "PR" rule when the task has no PR.
 
-- The first line is `WORKER <name>`, exactly: a worker recognizes itself by it.
+- The first line is `WORKER <name>` (reviewer: `REVIEWER <name>`), exactly: a worker
+  recognizes itself by it.
 - U1, U2 and the hook rule: the team brief (`team-mode.md`) copies them from here, word for
   word. U1 and U2 are those of SKILL.md: change them together.
 - "Delivery": where the result must land (SKILL.md, "The task cycle", step 2, "Isolation").
@@ -95,6 +96,6 @@ Look for problems, not for confirmation. Grid:
 - (c) Other solutions existed.
 - (d) A simpler or smaller method exists.
 - (e) It solves the user's real problem.
-Report: `OK`, or findings, each with a severity (critical, major, minor) and evidence
-(file:line, command output).
+Report, verdict first (a session shows only its first 400 characters): `OK`, or findings,
+each with a severity (critical, major, minor) and evidence (file:line, command output).
 ```
